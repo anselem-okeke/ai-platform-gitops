@@ -67,11 +67,11 @@ At completion:
 - Kubernetes-admin access remains the break-glass recovery path.
 
 ```text
-Keycloak                 Argo CD
+   Keycloak                 Argo CD
 (authentication)         (authorization)
      |                         |
-     | OIDC token             | RBAC
-     | + groups claim         |
+     | OIDC token              | RBAC
+     | + groups claim          |
      +------------------------>+
 ```
 
