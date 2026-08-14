@@ -1,0 +1,36 @@
+# Local files
+.local/
+tmp/
+*.tmp
+
+# Secrets / credentials
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.jwt
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Kubernetes secrets generated locally
+*-secret.yaml
+*-secrets.yaml
+
+# Tool/editor files
+.vscode/
+.idea/
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Terraform, if introduced later
+.terraform/
+*.tfstate
+*.tfstate.*

@@ -1,0 +1,46 @@
+# Phase 7 — GitOps and Delivery
+
+## Progress Checklist
+
+- [ ] GitOps architecture defined
+- [ ] Separate GitOps repository created
+- [ ] GitOps repository structure defined
+- [ ] Argo CD installed in the cluster
+- [ ] Argo CD access secured
+- [ ] Argo CD project created for the AI Platform
+- [ ] Root Application / App-of-Apps structure created
+- [ ] Cluster desired state stored in Git
+- [ ] Platform component manifests moved or referenced from GitOps
+- [ ] Environment structure created
+- [ ] Base and overlay strategy defined
+- [ ] Development environment configured
+- [ ] ModelService GitOps deployment structure added
+- [ ] AI Platform REST API deployment managed by Argo CD
+- [ ] AI Platform Operator deployment managed by Argo CD
+- [ ] Gateway / routing resources managed by Argo CD
+- [ ] Monitoring resources managed by Argo CD
+- [ ] Sync policy defined
+- [ ] Automated sync enabled where appropriate
+- [ ] Self-heal enabled where appropriate
+- [ ] Prune behavior defined safely
+- [ ] Argo CD health and sync status validated
+- [ ] Git change automatically reconciled into Kubernetes
+- [ ] Manual cluster drift detected by Argo CD
+- [ ] Manual cluster drift automatically repaired
+- [ ] Image version update workflow defined
+- [ ] CI builds and publishes operator/API images
+- [ ] Container registry integrated
+- [ ] GitOps repository updated with new image versions
+- [ ] Deployment promotion workflow defined
+- [ ] Rollback workflow validated
+- [ ] Secrets strategy defined for GitOps
+- [ ] Plain-text secrets prevented from entering Git
+- [ ] Existing secret files reviewed and cleaned up
+- [ ] `.gitignore` hardened for local credentials and tokens
+- [ ] Repository secret scan completed
+- [ ] End-to-end GitOps workflow validated
+- [ ] Manifests and scripts stored in Git
+- [ ] Recovery and troubleshooting documented
+- [ ] GitOps command/reference documentation completed
+- [ ] GitOps README and architecture documentation completed
+- [ ] Phase 7 GitOps and Delivery complete

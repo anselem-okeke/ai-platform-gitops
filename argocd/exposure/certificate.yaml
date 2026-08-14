@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-ai-platform-local
+  namespace: gateway-system
+spec:
+  secretName: argocd-ai-platform-local-tls
+
+  commonName: argocd.ai-platform.local
+
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+
+  dnsNames:
+    - argocd.ai-platform.local
+
+  issuerRef:
+    name: vault-issuer
+    kind: Issuer
+    group: cert-manager.io
