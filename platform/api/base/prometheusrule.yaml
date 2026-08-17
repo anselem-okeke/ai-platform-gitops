@@ -1,0 +1,352 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ai-platform-api
+  namespace: ai-platform
+  labels:
+    release: kps
+    app.kubernetes.io/name: ai-platform-api
+    app.kubernetes.io/component: alerting
+    app.kubernetes.io/part-of: ai-platform
+spec:
+  groups:
+    - name: ai-platform-api.sli
+      rules:
+        - record: ai_platform_api:sli_availability_ratio:5m
+          expr: |
+            (
+              sum(
+                rate(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz",
+                    status!~"5.."
+                  }[5m]
+                )
+              )
+            )
+            /
+            clamp_min(
+              sum(
+                rate(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz"
+                  }[5m]
+                )
+              ),
+              0.000001
+            )
+
+        - record: ai_platform_api:sli_error_ratio:5m
+          expr: |
+            (
+              sum(
+                rate(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz",
+                    status=~"5.."
+                  }[5m]
+                )
+              )
+              or vector(0)
+            )
+            /
+            clamp_min(
+              sum(
+                rate(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz"
+                  }[5m]
+                )
+              ),
+              0.000001
+            )
+
+        - record: ai_platform_api:sli_p95_latency_seconds:5m
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (
+                rate(
+                  ai_platform_api_http_request_duration_seconds_bucket{
+                    route!="/healthz",
+                    route!="/readyz"
+                  }[5m]
+                )
+              )
+            )
+
+        - record: ai_platform_api:sli_request_rate:5m
+          expr: |
+            sum(
+              rate(
+                ai_platform_api_http_requests_total{
+                  route!="/healthz",
+                  route!="/readyz"
+                }[5m]
+              )
+            )
+        - record: ai_platform_api:sli_availability_ratio:1h
+          expr: |
+            (
+              sum(
+                increase(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz",
+                    status!~"5.."
+                  }[1h]
+                )
+              )
+            )
+            /
+            clamp_min(
+              sum(
+                increase(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz"
+                  }[1h]
+                )
+              ),
+              1
+            )
+
+        - record: ai_platform_api:sli_availability_ratio:24h
+          expr: |
+            (
+              sum(
+                increase(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz",
+                    status!~"5.."
+                  }[24h]
+                )
+              )
+            )
+            /
+            clamp_min(
+              sum(
+                increase(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz"
+                  }[24h]
+                )
+              ),
+              1
+            )
+
+        - record: ai_platform_api:slo_availability_error_budget_consumed_ratio:24h
+          expr: |
+            clamp_min(
+              (
+                1
+                -
+                ai_platform_api:sli_availability_ratio:24h
+              )
+              /
+              (1 - 0.999),
+              0
+            )
+
+        - record: ai_platform_api:sli_error_ratio:1h
+          expr: |
+            (
+              sum(
+                increase(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz",
+                    status=~"5.."
+                  }[1h]
+                )
+              )
+              or vector(0)
+            )
+            /
+            clamp_min(
+              sum(
+                increase(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz"
+                  }[1h]
+                )
+              ),
+              1
+            )
+
+        - record: ai_platform_api:sli_error_ratio:6h
+          expr: |
+            (
+              sum(
+                increase(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz",
+                    status=~"5.."
+                  }[6h]
+                )
+              )
+              or vector(0)
+            )
+            /
+            clamp_min(
+              sum(
+                increase(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz"
+                  }[6h]
+                )
+              ),
+              1
+            )
+
+        - record: ai_platform_api:slo_error_budget_burn_rate:5m
+          expr: |
+            ai_platform_api:sli_error_ratio:5m
+            /
+            0.001
+
+        - record: ai_platform_api:slo_error_budget_burn_rate:1h
+          expr: |
+            ai_platform_api:sli_error_ratio:1h
+            /
+            0.001
+
+        - record: ai_platform_api:slo_error_budget_burn_rate:6h
+          expr: |
+            ai_platform_api:sli_error_ratio:6h
+            /
+            0.001
+            
+    - name: ai-platform-api.slo
+      rules:
+        - alert: AIPlatformAPIErrorBudgetFastBurn
+          expr: |
+            (
+              ai_platform_api:slo_error_budget_burn_rate:5m > 14.4
+            )
+            and
+            (
+              ai_platform_api:slo_error_budget_burn_rate:1h > 14.4
+            )
+          for: 2m
+          labels:
+            severity: critical
+            service: ai-platform-api
+            slo: availability
+          annotations:
+            summary: "AI Platform API is rapidly consuming its availability error budget"
+            description: "The AI Platform API is burning its 99.9% availability error budget at more than 14.4x across both the 5-minute and 1-hour windows."
+
+        - alert: AIPlatformAPIErrorBudgetSlowBurn
+          expr: |
+            (
+              ai_platform_api:slo_error_budget_burn_rate:1h > 6
+            )
+            and
+            (
+              ai_platform_api:slo_error_budget_burn_rate:6h > 6
+            )
+          for: 15m
+          labels:
+            severity: warning
+            service: ai-platform-api
+            slo: availability
+          annotations:
+            summary: "AI Platform API is steadily consuming its availability error budget"
+            description: "The AI Platform API is burning its 99.9% availability error budget at more than 6x across both the 1-hour and 6-hour windows."
+
+    - name: ai-platform-api.availability
+      rules:
+        - alert: AIPlatformAPIDown
+          expr: |
+            (
+              max by (job, namespace) (
+                up{
+                  job="ai-platform-api",
+                  namespace="ai-platform"
+                }
+              ) == 0
+            )
+            or
+            absent(
+              up{
+                job="ai-platform-api",
+                namespace="ai-platform"
+              }
+            )
+          for: 2m
+          labels:
+            severity: critical
+            service: ai-platform-api
+          annotations:
+            summary: "AI Platform API is unavailable"
+            description: "The AI Platform API has no healthy Prometheus scrape targets, or its targets are missing, for at least 2 minutes."
+
+    - name: ai-platform-api.errors
+      rules:
+        - alert: AIPlatformAPIHigh5xxRate
+          expr: |
+            (
+              sum(
+                rate(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz",
+                    status=~"5.."
+                  }[5m]
+                )
+              )
+              or vector(0)
+            )
+            /
+            clamp_min(
+              sum(
+                rate(
+                  ai_platform_api_http_requests_total{
+                    route!="/healthz",
+                    route!="/readyz"
+                  }[5m]
+                )
+              ),
+              0.000001
+            )
+            > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            service: ai-platform-api
+          annotations:
+            summary: "AI Platform API 5xx error rate is elevated"
+            description: "More than 5% of customer-facing AI Platform API requests have returned HTTP 5xx responses for at least 5 minutes."
+
+    - name: ai-platform-api.latency
+      rules:
+        - alert: AIPlatformAPIHighP95Latency
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (
+                rate(
+                  ai_platform_api_http_request_duration_seconds_bucket{
+                    route!="/healthz",
+                    route!="/readyz"
+                  }[5m]
+                )
+              )
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            service: ai-platform-api
+          annotations:
+            summary: "AI Platform API p95 latency is high"
+            description: "The p95 latency of customer-facing AI Platform API requests has exceeded 500 ms for at least 5 minutes."

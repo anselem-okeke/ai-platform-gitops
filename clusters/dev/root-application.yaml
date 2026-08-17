@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-platform-root
+  namespace: argocd
+
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: ai-platform
+
+  source:
+    repoURL: https://github.com/anselem-okeke/ai-platform-gitops.git
+    targetRevision: HEAD
+    path: clusters/dev/apps
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false

@@ -1,0 +1,34 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-ai-platform-local
+  namespace: gateway-system
+  labels:
+    app.kubernetes.io/name: ai-platform-api
+    app.kubernetes.io/component: edge-tls
+    app.kubernetes.io/part-of: ai-platform
+spec:
+  secretName: api-ai-platform-local-tls
+
+  commonName: api.ai-platform.local
+
+  dnsNames:
+    - api.ai-platform.local
+
+  duration: 720h
+  renewBefore: 168h
+
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+  issuerRef:
+    name: vault-issuer
+    kind: Issuer
+    group: cert-manager.io

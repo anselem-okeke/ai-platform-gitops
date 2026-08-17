@@ -14,14 +14,34 @@ spec:
   destinations:
     - namespace: ai-platform
       server: https://kubernetes.default.svc
+
+    - namespace: ai-platform-operator-system
+      server: https://kubernetes.default.svc
+
     - namespace: monitoring
       server: https://kubernetes.default.svc
+
     - namespace: gateway-system
+      server: https://kubernetes.default.svc
+
+    - namespace: argocd
       server: https://kubernetes.default.svc
 
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
+
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+
+    - group: gateway.networking.k8s.io
+      kind: GatewayClass
 
   namespaceResourceWhitelist:
     - group: ""
@@ -32,12 +52,18 @@ spec:
       kind: ServiceAccount
     - group: "apps"
       kind: Deployment
+    - group: "rbac.authorization.k8s.io"
+      kind: Role
+    - group: "rbac.authorization.k8s.io"
+      kind: RoleBinding
     - group: "apps"
       kind: StatefulSet
     - group: "policy"
       kind: PodDisruptionBudget
     - group: "networking.k8s.io"
       kind: NetworkPolicy
+    - group: "gateway.networking.k8s.io"
+      kind: Gateway
     - group: "gateway.networking.k8s.io"
       kind: HTTPRoute
     - group: "monitoring.coreos.com"
@@ -46,3 +72,8 @@ spec:
       kind: PrometheusRule
     - group: "platform.anselem.dev"
       kind: ModelService
+    - group: "argoproj.io"
+      kind: Application
+    - group: "gateway.envoyproxy.io"
+      kind: SecurityPolicy
+

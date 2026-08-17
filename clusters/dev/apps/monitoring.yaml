@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-platform-monitoring
+  namespace: argocd
+
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: ai-platform
+
+  source:
+    repoURL: https://github.com/anselem-okeke/ai-platform-gitops.git
+    targetRevision: HEAD
+    path: platform/monitoring/overlays/dev
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false

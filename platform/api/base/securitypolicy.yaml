@@ -1,0 +1,89 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: ai-platform-api-jwt-authorization
+  namespace: ai-platform
+  labels:
+    app.kubernetes.io/name: ai-platform-api-jwt-authorization
+    app.kubernetes.io/component: edge-authorization
+    app.kubernetes.io/part-of: ai-platform
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: ai-platform-api
+
+  jwt:
+    optional: false
+
+    providers:
+      - name: ai-platform-keycloak
+
+        issuer: https://auth.ai-platform.local/realms/ai-platform
+
+        audiences:
+          - ai-platform-gateway
+
+        remoteJWKS:
+          uri: http://keycloak.keycloak.svc.cluster.local:8080/realms/ai-platform/protocol/openid-connect/certs
+
+        extractFrom:
+          headers:
+            - name: Authorization
+              valuePrefix: "Bearer "
+
+  authorization:
+    defaultAction: Deny
+
+    rules:
+      - name: allow-platform-admin
+        action: Allow
+
+        principal:
+          jwt:
+            provider: ai-platform-keycloak
+
+            claims:
+              - name: realm_access.roles
+                valueType: StringArray
+                values:
+                  - platform-admin
+
+      - name: allow-model-deployer
+        action: Allow
+
+        operation:
+          methods:
+            - GET
+            - HEAD
+            - POST
+            - PUT
+            - PATCH
+
+        principal:
+          jwt:
+            provider: ai-platform-keycloak
+
+            claims:
+              - name: realm_access.roles
+                valueType: StringArray
+                values:
+                  - model-deployer
+
+      - name: allow-model-viewer
+        action: Allow
+
+        operation:
+          methods:
+            - GET
+            - HEAD
+
+        principal:
+          jwt:
+            provider: ai-platform-keycloak
+
+            claims:
+              - name: realm_access.roles
+                valueType: StringArray
+                values:
+                  - model-viewer

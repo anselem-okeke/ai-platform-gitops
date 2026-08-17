@@ -1,0 +1,31 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ai-platform-api-http-redirect
+  namespace: ai-platform
+  labels:
+    app.kubernetes.io/name: ai-platform-api-http-redirect
+    app.kubernetes.io/component: edge-routing
+    app.kubernetes.io/part-of: ai-platform
+spec:
+  hostnames:
+    - api.ai-platform.local
+
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: shared-gateway
+      namespace: gateway-system
+      sectionName: http
+
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301

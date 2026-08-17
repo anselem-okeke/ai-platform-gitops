@@ -1,0 +1,64 @@
+apiVersion: platform.anselem.dev/v1alpha1
+kind: ModelService
+metadata:
+  name: fraud-model
+  namespace: ai-platform
+
+spec:
+  image: nginxinc/nginx-unprivileged:1.31-alpine
+  replicas: 2
+  port: 8080
+
+  health:
+    startupPath: /
+    startupFailureThreshold: 30
+    startupPeriodSeconds: 10
+    readinessPath: /
+    livenessPath: /
+
+  rollout:
+    terminationGracePeriodSeconds: 30
+    preStopDelaySeconds: 5
+    minReadySeconds: 5
+    progressDeadlineSeconds: 600
+    maxUnavailable: "0"
+    maxSurge: "1"
+
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: "1"
+
+  networkPolicy:
+    enabled: true
+    allowSameNamespaceIngress: true
+    allowDNSEgress: true
+
+  exposure:
+    enabled: true
+    hostname: fraud-model.local
+    pathPrefix: /
+    gatewayName: shared-gateway
+    gatewayNamespace: gateway-system
+    gatewaySectionName: fraud-model-https
+    gatewayDataPlaneNamespace: envoy-gateway-system
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  security:
+    runAsNonRoot: true
+    runAsUser: 101
+    runAsGroup: 101
+    fsGroup: 101
+    readOnlyRootFilesystem: true
+    automountServiceAccountToken: false
+
+  storage:
+    enabled: true
+    mountPath: /models
+    size: 1Gi

@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ai-platform-api
+  namespace: ai-platform
+rules:
+  - apiGroups:
+      - platform.anselem.dev
+    resources:
+      - modelservices
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - patch
+      - delete

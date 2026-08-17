@@ -1,0 +1,503 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: modelservices.platform.anselem.dev
+spec:
+  group: platform.anselem.dev
+  names:
+    kind: ModelService
+    listKind: ModelServiceList
+    plural: modelservices
+    shortNames:
+    - ms
+    singular: modelservice
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.readyReplicas
+      name: Ready
+      type: integer
+    - jsonPath: .spec.image
+      name: Image
+      type: string
+    - jsonPath: .status.endpoint
+      name: Endpoint
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ModelService is the Schema for the modelservices API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: spec defines the desired state of ModelService.
+            properties:
+              exposure:
+                description: |-
+                  Exposure contains optional Gateway API HTTP exposure configuration.
+                  When disabled or omitted, no HTTPRoute is created.
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled determines whether the operator creates an
+                      HTTPRoute.
+                    type: boolean
+                  gatewayDataPlaneNamespace:
+                    default: envoy-gateway-system
+                    description: |-
+                      GatewayDataPlaneNamespace is the namespace containing the Gateway
+                      proxy Pods. The operator allows ingress from this namespace through
+                      the generated NetworkPolicy.
+                    minLength: 1
+                    type: string
+                  gatewayName:
+                    default: shared-gateway
+                    description: GatewayName is the name of the shared Gateway.
+                    minLength: 1
+                    type: string
+                  gatewayNamespace:
+                    default: gateway-system
+                    description: GatewayNamespace is the namespace containing the
+                      shared Gateway.
+                    minLength: 1
+                    type: string
+                  gatewaySectionName:
+                    default: http
+                    description: |-
+                      GatewaySectionName identifies the Gateway listener to which the
+                      HTTPRoute should attach.
+                    minLength: 1
+                    type: string
+                  hostname:
+                    description: |-
+                      Hostname is the DNS hostname matched by the HTTPRoute.
+                      Example: fraud-model.local
+                    maxLength: 253
+                    minLength: 1
+                    type: string
+                  pathPrefix:
+                    default: /
+                    description: PathPrefix is the HTTP path prefix forwarded to the
+                      ModelService.
+                    pattern: ^/.*
+                    type: string
+                type: object
+              health:
+                description: |-
+                  Health contains HTTP health check configuration.
+                  When omitted, both probe paths default to "/".
+                properties:
+                  livenessPath:
+                    default: /
+                    description: |-
+                      LivenessPath is the HTTP path used to determine whether the
+                      model service is still healthy.
+                    pattern: ^/.*
+                    type: string
+                  readinessPath:
+                    default: /
+                    description: |-
+                      ReadinessPath is the HTTP path used to determine whether the
+                      model service is ready to receive traffic.
+                    pattern: ^/.*
+                    type: string
+                  startupFailureThreshold:
+                    default: 30
+                    description: |-
+                      StartupFailureThreshold controls how many startup-probe failures are
+                      allowed before Kubernetes restarts the container.
+                      Combined with StartupPeriodSeconds, this determines the maximum startup
+                      duration.
+                    format: int32
+                    maximum: 120
+                    minimum: 1
+                    type: integer
+                  startupPath:
+                    default: /
+                    description: |-
+                      StartupPath is the HTTP path used while the model service is starting.
+                      Readiness and liveness probes do not begin until this probe succeeds.
+                    pattern: ^/.*
+                    type: string
+                  startupPeriodSeconds:
+                    default: 10
+                    description: StartupPeriodSeconds controls how frequently the
+                      startup probe runs.
+                    format: int32
+                    maximum: 60
+                    minimum: 1
+                    type: integer
+                type: object
+              image:
+                description: |-
+                  Image is the container image used to run the model service.
+                  Example: ghcr.io/anselem-okeke/fraud-model:v1
+                minLength: 1
+                type: string
+              networkPolicy:
+                description: |-
+                  NetworkPolicy contains network-isolation settings.
+                  When omitted, the controller applies its secure defaults.
+                properties:
+                  allowDNSEgress:
+                    default: true
+                    description: AllowDNSEgress allows UDP and TCP DNS traffic to
+                      CoreDNS.
+                    type: boolean
+                  allowSameNamespaceIngress:
+                    default: true
+                    description: |-
+                      AllowSameNamespaceIngress allows Pods in the ModelService namespace
+                      to connect to the model-serving port.
+                    type: boolean
+                  enabled:
+                    default: true
+                    description: Enabled determines whether the operator creates a
+                      NetworkPolicy.
+                    type: boolean
+                required:
+                - enabled
+                type: object
+              podDisruptionBudget:
+                description: |-
+                  PodDisruptionBudget contains voluntary-disruption protection settings.
+                  When omitted, the controller applies its default PDB configuration.
+                properties:
+                  enabled:
+                    default: true
+                    description: |-
+                      Enabled determines whether the operator should create a
+                      PodDisruptionBudget for this ModelService.
+                    type: boolean
+                  maxUnavailable:
+                    default: "1"
+                    description: |-
+                      MaxUnavailable is the maximum number or percentage of Pods that may be
+                      unavailable after a voluntary disruption.
+                      Examples: "1", "25%".
+                    pattern: ^([0-9]+|[0-9]+%)$
+                    type: string
+                type: object
+              port:
+                default: 8080
+                description: Port is the port exposed by the model container and Service.
+                format: int32
+                maximum: 65535
+                minimum: 1
+                type: integer
+              replicas:
+                default: 1
+                description: Replicas is the desired number of model-serving pods.
+                format: int32
+                maximum: 10
+                minimum: 1
+                type: integer
+              resources:
+                description: |-
+                  Resources defines CPU and memory requests and limits for the
+                  model-serving container.
+
+                  Requests are used by the Kubernetes scheduler when deciding where
+                  the Pod can run.
+
+                  Limits define the maximum CPU and memory that the container may use.
+                properties:
+                  claims:
+                    description: |-
+                      Claims lists the names of resources, defined in spec.resourceClaims,
+                      that are used by this container.
+
+                      This field depends on the
+                      DynamicResourceAllocation feature gate.
+
+                      This field is immutable. It can only be set for containers.
+                    items:
+                      description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                      properties:
+                        name:
+                          description: |-
+                            Name must match the name of one entry in pod.spec.resourceClaims of
+                            the Pod where this field is used. It makes that resource available
+                            inside a container.
+                          type: string
+                        request:
+                          description: |-
+                            Request is the name chosen for a request in the referenced claim.
+                            If empty, everything from the claim is made available, otherwise
+                            only the result of this request.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Limits describes the maximum amount of compute resources allowed.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Requests describes the minimum amount of compute resources required.
+                      If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                      otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                type: object
+              rollout:
+                description: |-
+                  Rollout contains graceful termination and Deployment rollout settings.
+                  When omitted, the controller applies safe defaults.
+                properties:
+                  maxSurge:
+                    default: "1"
+                    description: |-
+                      MaxSurge is the maximum number or percentage of additional replicas
+                      created during a rolling update.
+                    pattern: ^([0-9]+|[0-9]+%)$
+                    type: string
+                  maxUnavailable:
+                    default: "0"
+                    description: |-
+                      MaxUnavailable is the maximum number or percentage of replicas that may
+                      be unavailable during a rolling update.
+                    pattern: ^([0-9]+|[0-9]+%)$
+                    type: string
+                  minReadySeconds:
+                    default: 5
+                    description: |-
+                      MinReadySeconds is the minimum time a new Pod must remain ready before
+                      Kubernetes considers it available.
+                    format: int32
+                    maximum: 300
+                    minimum: 0
+                    type: integer
+                  preStopDelaySeconds:
+                    default: 5
+                    description: |-
+                      PreStopDelaySeconds delays container termination to allow Service and
+                      EndpointSlice changes to propagate before the process exits.
+                      This value must be lower than TerminationGracePeriodSeconds.
+                    format: int32
+                    maximum: 120
+                    minimum: 0
+                    type: integer
+                  progressDeadlineSeconds:
+                    default: 600
+                    description: |-
+                      ProgressDeadlineSeconds is the maximum time allowed for a Deployment
+                      rollout to make progress.
+                    format: int32
+                    maximum: 3600
+                    minimum: 1
+                    type: integer
+                  terminationGracePeriodSeconds:
+                    default: 30
+                    description: |-
+                      TerminationGracePeriodSeconds is the total time Kubernetes allows for
+                      the preStop hook and normal container shutdown.
+                    format: int64
+                    maximum: 600
+                    minimum: 1
+                    type: integer
+                type: object
+              security:
+                description: |-
+                  Security contains Pod-level and container-level security configuration.
+                  When omitted, the controller will apply its secure defaults.
+                properties:
+                  automountServiceAccountToken:
+                    default: false
+                    description: |-
+                      AutomountServiceAccountToken controls whether Kubernetes API credentials
+                      are automatically mounted into the workload Pod.
+
+                      Model-serving workloads should normally not require direct Kubernetes
+                      API access.
+                    type: boolean
+                  fsGroup:
+                    default: 101
+                    description: |-
+                      FSGroup is the supplemental group applied to mounted volumes.
+                      It allows the non-root process to access supported persistent volumes.
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  readOnlyRootFilesystem:
+                    default: true
+                    description: |-
+                      ReadOnlyRootFilesystem prevents writes to the container root filesystem.
+                      Writable application data should use mounted volumes such as emptyDir
+                      or PersistentVolumeClaim volumes.
+                    type: boolean
+                  runAsGroup:
+                    default: 101
+                    description: RunAsGroup is the primary Linux group ID used by
+                      the model container.
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  runAsNonRoot:
+                    default: true
+                    description: RunAsNonRoot requires the model container to run
+                      as a non-root user.
+                    type: boolean
+                  runAsUser:
+                    default: 101
+                    description: RunAsUser is the Linux user ID used by the model
+                      container.
+                    format: int64
+                    minimum: 1
+                    type: integer
+                type: object
+              storage:
+                description: Storage contains persistent-storage configuration.
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled determines whether persistent storage should
+                      be provisioned.
+                    type: boolean
+                  mountPath:
+                    default: /models
+                    description: MountPath is the path where storage is mounted in
+                      the model container.
+                    pattern: ^/.*
+                    type: string
+                  size:
+                    default: 1Gi
+                    description: Size is the requested persistent volume capacity.
+                    pattern: ^[0-9]+(Mi|Gi|Ti)$
+                    type: string
+                type: object
+            required:
+            - image
+            type: object
+          status:
+            description: status defines the observed state of ModelService.
+            properties:
+              conditions:
+                description: Conditions describe the latest observed state of the
+                  ModelService.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              endpoint:
+                description: Endpoint is the internal Kubernetes Service endpoint.
+                type: string
+              observedGeneration:
+                description: ObservedGeneration is the latest resource generation
+                  processed by the controller.
+                format: int64
+                type: integer
+              phase:
+                description: |-
+                  Phase represents the current lifecycle phase.
+                  Expected values include Pending, Provisioning, Ready, Degraded and Failed.
+                type: string
+              readyReplicas:
+                description: ReadyReplicas is the number of ready model-serving pods.
+                format: int32
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

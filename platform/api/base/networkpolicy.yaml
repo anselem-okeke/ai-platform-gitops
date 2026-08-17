@@ -1,0 +1,119 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-platform-api
+  namespace: ai-platform
+  labels:
+    app.kubernetes.io/name: ai-platform-api
+    app.kubernetes.io/component: network-security
+    app.kubernetes.io/part-of: ai-platform
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ai-platform-api
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Only the Envoy proxy for gateway-system/shared-gateway
+    # may reach the Platform API HTTP port.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: envoy-gateway-system
+
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: proxy
+              app.kubernetes.io/name: envoy
+              gateway.envoyproxy.io/owning-gateway-name: shared-gateway
+              gateway.envoyproxy.io/owning-gateway-namespace: gateway-system
+
+      ports:
+        - protocol: TCP
+          port: 8080
+
+    # Prometheus may scrape the Platform API metrics endpoint.
+    #
+    # The ServiceMonitor targets the same HTTP port used by the API,
+    # but NetworkPolicy cannot restrict by HTTP path. Therefore only
+    # the Prometheus workload itself is permitted to reach TCP 8080.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+              operator.prometheus.io/name: kps-kube-prometheus-stack-prometheus
+
+      ports:
+        - protocol: TCP
+          port: 8080
+
+  egress:
+    # DNS resolution through CoreDNS.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+
+      ports:
+        - protocol: UDP
+          port: 53
+
+        - protocol: TCP
+          port: 53
+
+    # Kubernetes API ClusterIP.
+    #
+    # The Platform API uses its ServiceAccount credentials to manage
+    # ModelService resources through https://10.96.0.1:443.
+    - to:
+        - ipBlock:
+            cidr: 10.96.0.1/32
+
+      ports:
+        - protocol: TCP
+          port: 443
+
+    # Actual kind control-plane Kubernetes API endpoint.
+    #
+    # Keep this together with the ClusterIP rule because NetworkPolicy
+    # enforcement relative to Service DNAT can differ by CNI.
+    - to:
+        - ipBlock:
+            cidr: 172.19.0.7/32
+
+      ports:
+        - protocol: TCP
+          port: 6443
+
+    # OIDC issuer / Keycloak through the shared Envoy Gateway.
+    #
+    # auth.ai-platform.local resolves to the Gateway LoadBalancer VIP,
+    # but Service translation forwards HTTPS to the Envoy proxy on
+    # targetPort 10443. NetworkPolicy enforcement may therefore see
+    # the translated Pod destination rather than the original VIP.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: envoy-gateway-system
+
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: proxy
+              app.kubernetes.io/name: envoy
+              gateway.envoyproxy.io/owning-gateway-name: shared-gateway
+              gateway.envoyproxy.io/owning-gateway-namespace: gateway-system
+
+      ports:
+        - protocol: TCP
+          port: 10443
