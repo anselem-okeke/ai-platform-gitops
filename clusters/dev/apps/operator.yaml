@@ -19,5 +19,8 @@ spec:
     namespace: ai-platform-operator-system
 
   syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=false

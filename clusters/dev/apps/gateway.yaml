@@ -19,5 +19,8 @@ spec:
     namespace: gateway-system
 
   syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=false
