@@ -3,9 +3,10 @@ kind: ConfigMap
 metadata:
   name: grafana-dashboard-ai-platform-api
   namespace: monitoring
+  annotations:
+    gitops-test.anselem.dev/auto-sync: "1"
   labels:
     grafana_dashboard: "1"
-    rollback-test.anselem.dev/value: "bad-version"
     app.kubernetes.io/name: ai-platform-api
     app.kubernetes.io/component: dashboard
     app.kubernetes.io/part-of: ai-platform
