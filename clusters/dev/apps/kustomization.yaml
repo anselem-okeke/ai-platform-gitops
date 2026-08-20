@@ -7,3 +7,4 @@ resources:
   - gateway.yaml
   - monitoring.yaml
   - modelservices.yaml
+  - policies.yaml
