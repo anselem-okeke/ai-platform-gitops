@@ -8,13 +8,17 @@ spec:
 
   source:
     repoURL: https://github.com/anselem-okeke/ai-platform-gitops.git
-    targetRevision: HEAD
+    targetRevision: main
     path: platform/policies/overlays/dev
 
   destination:
     server: https://kubernetes.default.svc
+    namespace: default
 
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=false
