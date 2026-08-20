@@ -1,0 +1,196 @@
+name: Validate GitOps
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  validate:
+    name: Validate GitOps Manifests
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install kubeconform
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="0.7.0"
+
+          curl -fsSLO \
+            "https://github.com/yannh/kubeconform/releases/download/v${VERSION}/kubeconform-linux-amd64.tar.gz"
+
+          curl -fsSLO \
+            "https://github.com/yannh/kubeconform/releases/download/v${VERSION}/CHECKSUMS"
+
+          grep "kubeconform-linux-amd64.tar.gz" CHECKSUMS \
+            | sha256sum --check
+
+          tar -xzf kubeconform-linux-amd64.tar.gz kubeconform
+
+          sudo install \
+            -m 0755 \
+            kubeconform \
+            /usr/local/bin/kubeconform
+
+          kubeconform -v
+
+      - name: Render GitOps overlays
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p /tmp/gitops-rendered
+
+          paths=(
+            "platform/operator/overlays/dev"
+            "platform/api/overlays/dev"
+            "platform/gateway/overlays/dev"
+            "platform/monitoring/overlays/dev"
+            "modelservices/overlays/dev"
+            "clusters/dev/apps"
+          )
+
+          for path in "${paths[@]}"; do
+            output="$(
+              echo "$path" \
+                | tr '/' '-'
+            ).yaml"
+
+            echo "=== Rendering ${path} ==="
+
+            kubectl kustomize "$path" \
+              >"/tmp/gitops-rendered/${output}"
+
+            test -s "/tmp/gitops-rendered/${output}"
+          done
+
+          echo
+          echo "PASS: all GitOps targets rendered"
+
+      - name: Validate Kubernetes schemas
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          kubeconform \
+            -strict \
+            -summary \
+            -ignore-missing-schemas \
+            /tmp/gitops-rendered/*.yaml
+
+      - name: Enforce immutable production images
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OPERATOR_FILE="platform/operator/overlays/dev/kustomization.yaml"
+          API_FILE="platform/api/overlays/dev/kustomization.yaml"
+
+          validate_image() {
+            local file="$1"
+            local expected_image="$2"
+
+            echo "=== Validating ${file} ==="
+
+            grep -Fq \
+              "newName: ${expected_image}" \
+              "$file"
+
+            if grep -Eq \
+              '^[[:space:]]*newTag:' \
+              "$file"; then
+              echo "ERROR: mutable image tag found in ${file}"
+              exit 1
+            fi
+
+            digest="$(
+              sed -n \
+                's/^[[:space:]]*digest:[[:space:]]*\(sha256:[0-9a-f]\{64\}\)[[:space:]]*$/\1/p' \
+                "$file"
+            )"
+
+            if [ -z "$digest" ]; then
+              echo "ERROR: valid sha256 digest not found in ${file}"
+              exit 1
+            fi
+
+            if [ "$(printf '%s\n' "$digest" | wc -l)" -ne 1 ]; then
+              echo "ERROR: expected exactly one digest in ${file}"
+              exit 1
+            fi
+
+            echo "PASS: ${expected_image}@${digest}"
+          }
+
+          validate_image \
+            "$OPERATOR_FILE" \
+            "ghcr.io/anselem-okeke/ai-platform-operator"
+
+          validate_image \
+            "$API_FILE" \
+            "ghcr.io/anselem-okeke/ai-platform-api"
+
+      - name: Reject unsafe rendered image references
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "=== Rendered images ==="
+          grep -hE '^[[:space:]]*image:' /tmp/gitops-rendered/*.yaml || true
+
+          if grep -hEnE \
+            '^[[:space:]]*image:[[:space:]]*[^[:space:]]+:(latest|dev|main|master)([[:space:]]|$)' \
+            /tmp/gitops-rendered/*.yaml; then
+
+            echo
+            echo "ERROR: mutable or development image tag detected in rendered GitOps output."
+            exit 1
+          fi
+
+          echo "PASS: no forbidden image tags detected in rendered manifests"
+
+      - name: Scan repository for obvious secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          patterns=(
+            '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
+            'AKIA[0-9A-Z]{16}'
+            'gh[pousr]_[A-Za-z0-9_]{20,}'
+          )
+
+          for pattern in "${patterns[@]}"; do
+            if git grep -nE "$pattern" -- \
+              ':!*.md' \
+              ':!docs/**'; then
+
+              echo
+              echo "ERROR: potential secret detected."
+              exit 1
+            fi
+          done
+
+          echo "PASS: no obvious committed credentials detected"
+
+      - name: Validate diff hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git diff --check
