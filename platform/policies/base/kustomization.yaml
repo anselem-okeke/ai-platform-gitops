@@ -4,3 +4,5 @@ kind: Kustomization
 resources:
   - image-admission-policy.yaml
   - image-admission-policy-binding.yaml
+  - pod-image-admission-policy.yaml
+  - pod-image-admission-policy-binding.yaml

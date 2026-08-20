@@ -1,36 +1,45 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
 metadata:
-  name: ai-platform-image-policy
+  name: ai-platform-pod-image-policy
 spec:
   failurePolicy: Fail
 
   matchConstraints:
     resourceRules:
       - apiGroups:
-          - apps
+          - ""
         apiVersions:
           - v1
         operations:
           - CREATE
           - UPDATE
         resources:
-          - deployments
+          - pods
+          - pods/ephemeralcontainers
 
   variables:
     - name: containers
       expression: >-
-        object.spec.template.spec.containers
+        object.spec.containers
 
     - name: initContainers
       expression: >-
-        has(object.spec.template.spec.initContainers)
-        ? object.spec.template.spec.initContainers
+        has(object.spec.initContainers)
+        ? object.spec.initContainers
+        : []
+
+    - name: ephemeralContainers
+      expression: >-
+        has(object.spec.ephemeralContainers)
+        ? object.spec.ephemeralContainers
         : []
 
     - name: allContainers
       expression: >-
-        variables.containers + variables.initContainers
+        variables.containers +
+        variables.initContainers +
+        variables.ephemeralContainers
 
   validations:
     - expression: >-
@@ -41,8 +50,8 @@ spec:
           )
         )
       message: >-
-        All Deployment container and initContainer images must come from
-        the approved ghcr.io/anselem-okeke registry namespace.
+        All Pod container, initContainer, and ephemeralContainer images
+        must come from the approved ghcr.io/anselem-okeke registry namespace.
 
     - expression: >-
         variables.allContainers.all(
@@ -52,5 +61,5 @@ spec:
           )
         )
       message: >-
-        All Deployment container and initContainer images must be pinned
-        to a full sha256 digest.
+        All Pod container, initContainer, and ephemeralContainer images
+        must be pinned to a full sha256 digest.
