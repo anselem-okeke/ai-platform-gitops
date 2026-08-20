@@ -43,6 +43,12 @@ spec:
     - group: gateway.networking.k8s.io
       kind: GatewayClass
 
+    - group: admissionregistration.k8s.io
+      kind: ValidatingAdmissionPolicy
+
+    - group: admissionregistration.k8s.io
+      kind: ValidatingAdmissionPolicyBinding
+
   namespaceResourceWhitelist:
     - group: ""
       kind: ConfigMap
