@@ -10,6 +10,8 @@ spec:
 
   sourceRepos:
     - https://github.com/anselem-okeke/ai-platform-gitops.git
+    - ghcr.io/sigstore/helm-charts
+    - ghcr.io/github/artifact-attestations-helm-charts
 
   destinations:
     - namespace: ai-platform
@@ -25,6 +27,9 @@ spec:
       server: https://kubernetes.default.svc
 
     - namespace: argocd
+      server: https://kubernetes.default.svc
+
+    - namespace: cosign-system
       server: https://kubernetes.default.svc
 
   clusterResourceWhitelist:
@@ -48,6 +53,12 @@ spec:
 
     - group: admissionregistration.k8s.io
       kind: ValidatingAdmissionPolicyBinding
+
+    - group: policy.sigstore.dev
+      kind: TrustRoot
+
+    - group: policy.sigstore.dev
+      kind: ClusterImagePolicy
 
   namespaceResourceWhitelist:
     - group: ""
