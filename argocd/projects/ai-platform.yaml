@@ -54,6 +54,12 @@ spec:
     - group: admissionregistration.k8s.io
       kind: ValidatingAdmissionPolicyBinding
 
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+
     - group: policy.sigstore.dev
       kind: TrustRoot
 
@@ -63,6 +69,8 @@ spec:
   namespaceResourceWhitelist:
     - group: ""
       kind: ConfigMap
+    - group: ""
+      kind: Secret
     - group: ""
       kind: Service
     - group: ""
