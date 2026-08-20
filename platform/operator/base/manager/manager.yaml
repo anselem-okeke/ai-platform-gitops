@@ -5,6 +5,7 @@ metadata:
     control-plane: controller-manager
     app.kubernetes.io/name: ai-platform-operator
     app.kubernetes.io/managed-by: kustomize
+    policy.sigstore.dev/include: "true"
   name: system
 ---
 apiVersion: apps/v1
