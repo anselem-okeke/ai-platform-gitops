@@ -17,6 +17,23 @@ spec:
     server: https://kubernetes.default.svc
     namespace: cosign-system
 
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      name: policy.sigstore.dev
+      jqPathExpressions:
+        - >-
+          .webhooks[]?.namespaceSelector.matchExpressions[]?
+          | select(.key == "webhooks.knative.dev/exclude")
+
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: policy.sigstore.dev
+      jqPathExpressions:
+        - >-
+          .webhooks[]?.namespaceSelector.matchExpressions[]?
+          | select(.key == "webhooks.knative.dev/exclude") 
+
   syncPolicy:
     automated:
       prune: true
@@ -24,3 +41,7 @@ spec:
 
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+
+
+  
