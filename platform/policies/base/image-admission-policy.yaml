@@ -1,0 +1,38 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: ai-platform-image-policy
+spec:
+  failurePolicy: Fail
+
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+
+  validations:
+    - expression: >
+        object.spec.template.spec.containers.all(
+          c,
+          c.image.startsWith(
+            "ghcr.io/anselem-okeke/"
+          )
+        )
+      message: >
+        Container images must come from the approved
+        ghcr.io/anselem-okeke registry namespace.
+
+    - expression: >
+        object.spec.template.spec.containers.all(
+          c,
+          c.image.contains("@sha256:")
+        )
+      message: >
+        Container images must be pinned by sha256 digest.

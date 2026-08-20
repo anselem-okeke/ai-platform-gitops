@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - image-admission-policy.yaml
+  - image-admission-policy-binding.yaml
