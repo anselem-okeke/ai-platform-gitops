@@ -145,26 +145,6 @@ jobs:
             "$API_FILE" \
             "ghcr.io/anselem-okeke/ai-platform-api"
 
-      - name: Reject unsafe image references
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if grep -RInE \
-            --include='*.yaml' \
-            --include='*.yml' \
-            'image:[[:space:]]*[^[:space:]]+:(latest|dev|main|master)([[:space:]]|$)' \
-            platform \
-            modelservices \
-            clusters; then
-
-            echo
-            echo "ERROR: mutable or development image tag detected."
-            exit 1
-          fi
-
-          echo "PASS: no forbidden image tags detected"
-
       - name: Reject unsafe rendered image references
         shell: bash
         run: |
@@ -183,6 +163,30 @@ jobs:
           fi
 
           echo "PASS: no forbidden image tags detected in rendered manifests"
+
+      - name: Scan repository for obvious secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          patterns=(
+            '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
+            'AKIA[0-9A-Z]{16}'
+            'gh[pousr]_[A-Za-z0-9_]{20,}'
+          )
+
+          for pattern in "${patterns[@]}"; do
+            if git grep -nE "$pattern" -- \
+              ':!*.md' \
+              ':!docs/**'; then
+
+              echo
+              echo "ERROR: potential secret detected."
+              exit 1
+            fi
+          done
+
+          echo "PASS: no obvious committed credentials detected"
 
       - name: Validate diff hygiene
         shell: bash
