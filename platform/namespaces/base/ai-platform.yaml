@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-platform
+  labels:
+    app.kubernetes.io/part-of: ai-platform
+    policy.sigstore.dev/include: "true"
+    shared-gateway-access: "true"

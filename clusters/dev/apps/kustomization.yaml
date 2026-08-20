@@ -8,3 +8,6 @@ resources:
   - monitoring.yaml
   - modelservices.yaml
   - policies.yaml
+  - policy-controller.yaml
+  - trust-policies.yaml
+  - namespaces.yaml

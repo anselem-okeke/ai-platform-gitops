@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: trust-policies
+  namespace: argocd
+spec:
+  project: ai-platform
+
+  source:
+    repoURL: ghcr.io/github/artifact-attestations-helm-charts
+    chart: trust-policies
+    targetRevision: v0.7.0
+
+    helm:
+      releaseName: trust-policies
+      valuesObject:
+        policy:
+          enabled: true
+          organization: anselem-okeke
+          images:
+            - "ghcr.io/anselem-okeke/ai-platform-operator**"
+            - "ghcr.io/anselem-okeke/ai-platform-api**"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cosign-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
