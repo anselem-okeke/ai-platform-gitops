@@ -1,0 +1,18 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: ai-platform-image-policy
+spec:
+  policyName: ai-platform-image-policy
+
+  validationActions:
+    - Deny
+
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+            - ai-platform
+            - ai-platform-operator-system

@@ -61,6 +61,7 @@ jobs:
             "platform/api/overlays/dev"
             "platform/gateway/overlays/dev"
             "platform/monitoring/overlays/dev"
+            "platform/policies/overlays/dev"
             "modelservices/overlays/dev"
             "clusters/dev/apps"
           )
