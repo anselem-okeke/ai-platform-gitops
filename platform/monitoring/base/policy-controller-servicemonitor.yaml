@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: policy-controller
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: policy-controller
+    app.kubernetes.io/part-of: ai-platform
+spec:
+  namespaceSelector:
+    matchNames:
+      - cosign-system
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: policy-controller
+      app.kubernetes.io/name: policy-controller
+      control-plane: policy-controller-webhook
+
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s
