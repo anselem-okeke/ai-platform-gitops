@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - grafana-dashboard-platform-api.yaml
   - policy-controller-servicemonitor.yaml
+  - policy-controller-prometheusrule.yaml
