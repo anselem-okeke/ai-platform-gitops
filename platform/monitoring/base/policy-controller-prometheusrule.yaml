@@ -4,6 +4,7 @@ metadata:
   name: policy-controller
   namespace: monitoring
   labels:
+    release: kps
     app.kubernetes.io/name: policy-controller
     app.kubernetes.io/part-of: ai-platform
 spec:
