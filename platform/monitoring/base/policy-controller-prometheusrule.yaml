@@ -1,0 +1,61 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: policy-controller
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: policy-controller
+    app.kubernetes.io/part-of: ai-platform
+spec:
+  groups:
+    - name: policy-controller.rules
+      rules:
+        - alert: PolicyControllerTargetDown
+          expr: |
+            up{
+              namespace="cosign-system",
+              service="policy-controller-webhook-metrics"
+            } == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Sigstore Policy Controller metrics target is down
+            description: >-
+              Prometheus has been unable to scrape the Policy Controller
+              metrics endpoint for at least 5 minutes.
+
+        - alert: PolicyControllerReconcileFailures
+          expr: |
+            sum(
+              increase(
+                policy_controller_reconcile_count{
+                  success="false"
+                }[10m]
+              )
+            ) > 5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Policy Controller reconciliation failures detected
+            description: >-
+              More than five failed Policy Controller reconciliations
+              occurred during the last 10 minutes.
+
+        - alert: PolicyControllerWebhookCertificateFailures
+          expr: |
+            increase(
+              policy_controller_reconcile_count{
+                reconciler="WebhookCertificates",
+                success="false"
+              }[10m]
+            ) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Policy Controller webhook certificate reconciliation failed
+            description: >-
+              Policy Controller has reported a webhook certificate
+              reconciliation failure.
