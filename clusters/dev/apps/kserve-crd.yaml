@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kserve-crd
+  namespace: argocd
+
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: ai-platform
+
+  source:
+    repoURL: ghcr.io/kserve/charts
+    chart: kserve-crd
+    targetRevision: v0.19.0
+
+    helm:
+      releaseName: kserve-crd
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kserve
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true

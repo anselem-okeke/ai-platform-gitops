@@ -12,6 +12,7 @@ spec:
     - https://github.com/anselem-okeke/ai-platform-gitops.git
     - ghcr.io/sigstore/helm-charts
     - ghcr.io/github/artifact-attestations-helm-charts
+    - ghcr.io/kserve/charts
 
   destinations:
     - namespace: ai-platform
@@ -30,6 +31,9 @@ spec:
       server: https://kubernetes.default.svc
 
     - namespace: cosign-system
+      server: https://kubernetes.default.svc
+
+    - namespace: kserve
       server: https://kubernetes.default.svc
 
   clusterResourceWhitelist:
@@ -66,6 +70,9 @@ spec:
     - group: policy.sigstore.dev
       kind: ClusterImagePolicy
 
+    - group: serving.kserve.io
+      kind: ClusterStorageContainer
+
   namespaceResourceWhitelist:
     - group: ""
       kind: ConfigMap
@@ -101,4 +108,8 @@ spec:
       kind: Application
     - group: "gateway.envoyproxy.io"
       kind: SecurityPolicy
+    - group: "cert-manager.io"
+      kind: Certificate
+    - group: "cert-manager.io"
+      kind: Issuer
 
