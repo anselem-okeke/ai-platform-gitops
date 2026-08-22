@@ -3,3 +3,4 @@ kind: Kustomization
 
 resources:
   - ai-platform.yaml
+  - kserve.yaml
