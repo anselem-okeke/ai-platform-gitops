@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - kserve-crd.yaml
+  - kserve.yaml
   - operator.yaml
   - api.yaml
   - gateway.yaml

@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kserve
+  namespace: argocd
+
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: ai-platform
+
+  source:
+    repoURL: ghcr.io/kserve/charts
+    chart: kserve-resources
+    targetRevision: v0.19.0
+
+    helm:
+      releaseName: kserve
+
+      valuesObject:
+        kserve:
+          controller:
+            deploymentMode: Standard
+
+            gateway:
+              ingressGateway:
+                enableGatewayApi: true
+                kserveGateway: gateway-system/shared-gateway
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kserve
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=false
