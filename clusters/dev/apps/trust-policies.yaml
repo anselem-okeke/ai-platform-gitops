@@ -20,6 +20,7 @@ spec:
           images:
             - "ghcr.io/anselem-okeke/ai-platform-operator**"
             - "ghcr.io/anselem-okeke/ai-platform-api**"
+            - "ghcr.io/anselem-okeke/ai-platform-sklearnserver**"
 
   destination:
     server: https://kubernetes.default.svc

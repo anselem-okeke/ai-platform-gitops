@@ -73,6 +73,9 @@ spec:
     - group: serving.kserve.io
       kind: ClusterStorageContainer
 
+    - group: serving.kserve.io
+      kind: ClusterServingRuntime
+
   namespaceResourceWhitelist:
     - group: ""
       kind: ConfigMap
