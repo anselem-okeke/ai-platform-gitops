@@ -36,6 +36,9 @@ spec:
     - namespace: kserve
       server: https://kubernetes.default.svc
 
+    - namespace: model-storage
+      server: https://kubernetes.default.svc
+
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
@@ -85,6 +88,8 @@ spec:
       kind: Service
     - group: ""
       kind: ServiceAccount
+    - group: ""
+      kind: PersistentVolumeClaim
     - group: "apps"
       kind: Deployment
     - group: "rbac.authorization.k8s.io"

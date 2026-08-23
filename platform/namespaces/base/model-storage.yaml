@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: model-storage
+  labels:
+    app.kubernetes.io/part-of: ai-platform
+    app.kubernetes.io/component: model-storage
