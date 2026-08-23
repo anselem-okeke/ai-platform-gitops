@@ -1,0 +1,45 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ClusterServingRuntime
+metadata:
+  name: kserve-sklearnserver
+  annotations:
+    serving.kserve.io/server-type: sklearnserver
+spec:
+  annotations:
+    prometheus.kserve.io/path: /metrics
+    prometheus.kserve.io/port: "8080"
+
+  supportedModelFormats:
+    - name: sklearn
+      version: "1"
+      autoSelect: true
+      priority: 1
+
+  protocolVersions:
+    - v1
+    - v2
+
+  containers:
+    - name: kserve-container
+      image: ghcr.io/anselem-okeke/ai-platform-sklearnserver@sha256:42aa6c49a5348897c923925ab0fdbba16aed8a288346f3c10d3c5af223ec355f
+
+      args:
+        - --model_name={{.Name}}
+        - --model_dir=/mnt/models
+        - --http_port=8080
+
+      resources:
+        requests:
+          cpu: "1"
+          memory: 2Gi
+        limits:
+          cpu: "1"
+          memory: 2Gi
+
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        runAsNonRoot: true

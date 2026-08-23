@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kserve-runtimes
+  namespace: argocd
+
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: ai-platform
+
+  source:
+    repoURL: https://github.com/anselem-okeke/ai-platform-gitops.git
+    targetRevision: HEAD
+    path: platform/kserve/runtimes/overlays/dev
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kserve
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=false

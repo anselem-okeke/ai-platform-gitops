@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - kserve-crd.yaml
   - kserve.yaml
+  - kserve-runtimes.yaml
   - operator.yaml
   - api.yaml
   - gateway.yaml
