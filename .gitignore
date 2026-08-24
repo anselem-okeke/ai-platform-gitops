@@ -20,7 +20,9 @@ tmp/
 # Kubernetes secrets generated locally
 *-secret.yaml
 *-secrets.yaml
-# This is a declarative namespace/operator manifest, not secret data.
+
+# Declarative External Secrets manifests, not secret data.
+!clusters/dev/apps/external-secrets.yaml
 !platform/namespaces/base/external-secrets.yaml
 
 # Tool/editor files
