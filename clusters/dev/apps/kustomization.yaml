@@ -5,6 +5,7 @@ resources:
   - kserve-crd.yaml
   - kserve.yaml
   - kserve-runtimes.yaml
+  - model-storage.yaml
   - operator.yaml
   - api.yaml
   - gateway.yaml
