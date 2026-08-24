@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-ca
+  namespace: external-secrets
+  labels:
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/component: vault-ca
+    app.kubernetes.io/part-of: ai-platform
+data:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIFHzCCAwegAwIBAgIUD+cHo1ZFqZXgbkixzWswU62TtgYwDQYJKoZIhvcNAQEL
+    BQAwHzEdMBsGA1UEAwwUcGxhdGZvcm0taW50ZXJuYWwtY2EwHhcNMjYwNjE3MjI1
+    MDE0WhcNMzYwNjE0MjI1MDE0WjAfMR0wGwYDVQQDDBRwbGF0Zm9ybS1pbnRlcm5h
+    bC1jYTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAN04beTLePaNV5RF
+    CvQEU3LL7KnWlBcWNDZ6W6QrYCVnuxRlLYrwFSH0sUo9FLTWYecaUQVfMGvlfI5d
+    UtOacNaYt6HzKHBoJY902OTsrYNA/Z3kTrsfkv59D7voQ1lMuol11QDhU1H6ZRDX
+    j++ZTAYLqtDv3o2xsEccrNi/xeeRX1TFwh8MBB63Zq5IsIs8iybaXasNAtGiha+J
+    /WInPyjFg0kfvUsDWS6wDtFEdIDMU6jikSpB4r2uRnHRfJWbBK73M7frwanZFYuk
+    OWs5048SUJfteAtpQ/nk5AO+o/3J8UYA8K2v0/hjsDttDNa9iR6GxNG/XvOhpdxN
+    oRKwFS1OTRoBqNhTXNm45781H+nb+r4JJgqqci3Ld4N+2IiOftO+649A0twO4PgN
+    jv8g1qjOpUhuoYfsyBw+uqRO/QNBsX0jgzZdU5rTSgtgU82jBsHVbGJ+63W4qrw0
+    iuA8EGIEKOEjtpIbN4svc65N8nkT9hAso4dGidt8MhInCEy2rN6puhhSEvFa1NJJ
+    GrSeKDfuiIwEXB8TvAYWNcBi4jc3e8k9q/YiD1ykDyN2AYSSzGJLp+eumKnMOC0g
+    P4mAyXsr4A7qzqbn6jYvjpmsWmttJ5uXJa3GTr2uDDpCiJqyBK2tHIg0n3RkEk3f
+    EYt+dDdikE9rikquR5z3jbSQIGOLAgMBAAGjUzBRMB0GA1UdDgQWBBSmc1YAzEzl
+    tYrgjkYyw1qoI83HKTAfBgNVHSMEGDAWgBSmc1YAzEzltYrgjkYyw1qoI83HKTAP
+    BgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4ICAQA59x7l6e5gReoPIfio
+    e3sISLvtX1YPtl2T9uRMeI3bPErFiZACUP2RaKSn0t05ilZraHOkTRnKrNtJ+GWt
+    IhSfgX6Gzcyam2QcqACHnDI35ut2K0S02TV9ekYRBe7tZm97NO2XULSpmQgBj+gq
+    GuopdbCgSN+ijPy6TXMi2qLDIw+Xv3uCafA1CMxTTUOAhsCn0WISsc2PFRbwaNPZ
+    Me9sXz0Lw/eS9+yiiDyTsyZufjhi1xnOIaxJKYGXd2U3wpS33Zgc82g6WIUa/zfM
+    ZCwuVr/uVUNpCBCJoJZGyWonshi2mNsSojeAFN3pwgFwK8T798l/LOme6f4X3g2g
+    629OjyXMrQNR6CmXYejPoV+t8VBGdMrPTzpVwaT/1qGn/1Rw6CiHN2Vfnx+xiaIC
+    c3mLOm0qghaLQrEpolgU+8jamPsnja1u6iJTKmhr4ftWPfNtvFyJqD6jQwrP6zrz
+    AW/Sn870bYZtcjq3lC5kI3jz1GkW/7TwGkE3SZZTJ4ovEbje5YqA+mcAHSrR0yUw
+    3/AUnLGqsg248Z7zmhl2EUlEktsB+OCd/iTkEtPPbpeYc3Zmro+UANVLgEpoEo8u
+    +mKvcm7CVRkLkQ+pJMpXSuGdOdw+tw9O07r1a6qXcUK6gQ2Ajgv2/qJV76YoW6yU
+    7EKjbqBQRy6ItcaAoSoiXLx6Eg==
+    -----END CERTIFICATE-----
