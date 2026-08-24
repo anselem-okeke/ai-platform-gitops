@@ -5,3 +5,4 @@ resources:
   - ai-platform.yaml
   - kserve.yaml
   - model-storage.yaml
+  - external-secrets.yaml
