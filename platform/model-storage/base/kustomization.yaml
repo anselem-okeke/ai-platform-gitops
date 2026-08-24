@@ -6,3 +6,6 @@ resources:
   - secret.yaml
   - role.yaml
   - rolebinding.yaml
+  - pvc.yaml
+  - service.yaml
+  - deployment.yaml
