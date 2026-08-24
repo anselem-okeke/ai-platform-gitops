@@ -19,14 +19,6 @@ spec:
     server: https://kubernetes.default.svc
     namespace: model-storage
 
-  ignoreDifferences:
-    - group: ""
-      kind: Secret
-      name: minio-root-credentials
-      namespace: model-storage
-      jsonPointers:
-        - /data
-
   syncPolicy:
     automated:
       prune: true
