@@ -6,6 +6,7 @@ resources:
   - kserve.yaml
   - kserve-runtimes.yaml
   - external-secrets.yaml
+  - external-secrets-config.yaml
   - model-storage.yaml
   - operator.yaml
   - api.yaml
