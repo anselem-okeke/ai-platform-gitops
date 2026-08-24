@@ -18,12 +18,12 @@ tmp/
 !.env.example
 
 # Kubernetes secrets generated locally
-*-secret.yaml
-*-secrets.yaml
-
-# Declarative External Secrets manifests, not secret data.
-!clusters/dev/apps/external-secrets.yaml
-!platform/namespaces/base/external-secrets.yaml
+#*-secret.yaml
+#*-secrets.yaml
+#
+## Declarative External Secrets manifests, not secret data.
+#!clusters/dev/apps/external-secrets.yaml
+#!platform/namespaces/base/external-secrets.yaml
 
 # Tool/editor files
 .vscode/
