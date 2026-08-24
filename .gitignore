@@ -20,6 +20,8 @@ tmp/
 # Kubernetes secrets generated locally
 *-secret.yaml
 *-secrets.yaml
+# This is a declarative namespace/operator manifest, not secret data.
+!platform/namespaces/base/external-secrets.yaml
 
 # Tool/editor files
 .vscode/

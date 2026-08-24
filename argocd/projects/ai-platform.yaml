@@ -13,6 +13,7 @@ spec:
     - ghcr.io/sigstore/helm-charts
     - ghcr.io/github/artifact-attestations-helm-charts
     - ghcr.io/kserve/charts
+    - https://charts.external-secrets.io
 
   destinations:
     - namespace: ai-platform
@@ -37,6 +38,9 @@ spec:
       server: https://kubernetes.default.svc
 
     - namespace: model-storage
+      server: https://kubernetes.default.svc
+
+    - namespace: external-secrets
       server: https://kubernetes.default.svc
 
   clusterResourceWhitelist:
@@ -79,6 +83,9 @@ spec:
     - group: serving.kserve.io
       kind: ClusterServingRuntime
 
+    - group: external-secrets.io
+      kind: ClusterSecretStore
+
   namespaceResourceWhitelist:
     - group: ""
       kind: ConfigMap
@@ -120,4 +127,8 @@ spec:
       kind: Certificate
     - group: "cert-manager.io"
       kind: Issuer
+    - group: "external-secrets.io"
+      kind: ExternalSecret
+    - group: "external-secrets.io"
+      kind: SecretStore
 
