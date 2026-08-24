@@ -10,9 +10,11 @@ This repository manages the **platform layer**: continuous delivery, identity, i
 
 ## Overview
 
-The platform is managed declaratively through Git and reconciled into Kubernetes by Argo CD.
+> The platform is managed declaratively through Git and reconciled into Kubernetes by Argo CD.
 
 The main infrastructure flow is:
+
+![img](/img/argocd-platform.png)
 
 ```text
 Platform Engineer
