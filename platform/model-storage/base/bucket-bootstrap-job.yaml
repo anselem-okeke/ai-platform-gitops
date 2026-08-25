@@ -35,6 +35,9 @@ spec:
           imagePullPolicy: IfNotPresent
 
           env:
+            - name: MC_CONFIG_DIR
+              value: /work/.mc
+
             - name: MINIO_ROOT_USER
               valueFrom:
                 secretKeyRef:
@@ -53,17 +56,24 @@ spec:
 
           args:
             - |
+              set -eu
+
               echo "Waiting for MinIO S3 endpoint..."
 
-              until mc alias set \
+              until mc ready \
+                http://minio.model-storage.svc.cluster.local:9000
+              do
+                echo "MinIO S3 endpoint is not ready; retrying..."
+                sleep 5
+              done
+
+              echo "Configuring temporary MinIO client alias..."
+
+              mc alias set \
                 local \
                 http://minio.model-storage.svc.cluster.local:9000 \
                 "${MINIO_ROOT_USER}" \
                 "${MINIO_ROOT_PASSWORD}"
-              do
-                echo "MinIO not ready yet; retrying..."
-                sleep 5
-              done
 
               echo "Ensuring models bucket exists..."
 
@@ -77,6 +87,10 @@ spec:
                 local/models
 
               echo "PASS: models bucket exists"
+
+          volumeMounts:
+            - name: mc-config
+              mountPath: /work
 
           resources:
             requests:
@@ -92,3 +106,7 @@ spec:
               drop:
                 - ALL
             privileged: false
+
+      volumes:
+        - name: mc-config
+          emptyDir: {}
