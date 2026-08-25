@@ -1,0 +1,94 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-models-bucket-bootstrap
+  namespace: model-storage
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/component: bucket-bootstrap
+    app.kubernetes.io/part-of: ai-platform
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 3
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: minio
+        app.kubernetes.io/component: bucket-bootstrap
+        app.kubernetes.io/part-of: ai-platform
+
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: mc
+
+          image: quay.io/minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-root-credentials
+                  key: root-user
+
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-root-credentials
+                  key: root-password
+
+          command:
+            - /bin/sh
+            - -ec
+
+          args:
+            - |
+              echo "Waiting for MinIO S3 endpoint..."
+
+              until mc alias set \
+                local \
+                http://minio.model-storage.svc.cluster.local:9000 \
+                "${MINIO_ROOT_USER}" \
+                "${MINIO_ROOT_PASSWORD}"
+              do
+                echo "MinIO not ready yet; retrying..."
+                sleep 5
+              done
+
+              echo "Ensuring models bucket exists..."
+
+              mc mb \
+                --ignore-existing \
+                local/models
+
+              echo "Verifying models bucket..."
+
+              mc stat \
+                local/models
+
+              echo "PASS: models bucket exists"
+
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
