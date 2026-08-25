@@ -131,4 +131,6 @@ spec:
       kind: ExternalSecret
     - group: "external-secrets.io"
       kind: SecretStore
+    - group: "batch"
+      kind: Job
 
