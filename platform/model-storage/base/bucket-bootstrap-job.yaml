@@ -10,6 +10,7 @@ metadata:
   annotations:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
 spec:
   backoffLimit: 3
   ttlSecondsAfterFinished: 600
