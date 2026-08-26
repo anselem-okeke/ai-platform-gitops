@@ -8,10 +8,11 @@ metadata:
     app.kubernetes.io/component: bucket-bootstrap
     app.kubernetes.io/part-of: ai-platform
   annotations:
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 3
+  ttlSecondsAfterFinished: 600
 
   template:
     metadata:
@@ -58,22 +59,28 @@ spec:
             - |
               set -eu
 
-              echo "Waiting for MinIO S3 endpoint..."
+              echo "Configuring MinIO client alias..."
 
-              until mc ready \
-                http://minio.model-storage.svc.cluster.local:9000
-              do
-                echo "MinIO S3 endpoint is not ready; retrying..."
-                sleep 5
-              done
+              attempt=1
+              max_attempts=60
 
-              echo "Configuring temporary MinIO client alias..."
-
-              mc alias set \
+              while ! mc alias set \
                 local \
                 http://minio.model-storage.svc.cluster.local:9000 \
                 "${MINIO_ROOT_USER}" \
                 "${MINIO_ROOT_PASSWORD}"
+              do
+                if [ "${attempt}" -ge "${max_attempts}" ]; then
+                  echo "ERROR: unable to connect/authenticate to MinIO after ${max_attempts} attempts"
+                  exit 1
+                fi
+
+                echo "MinIO connection/authentication failed; retrying (${attempt}/${max_attempts})..."
+                attempt=$((attempt + 1))
+                sleep 5
+              done
+
+              echo "PASS: MinIO connection and authentication succeeded"
 
               echo "Ensuring models bucket exists..."
 
