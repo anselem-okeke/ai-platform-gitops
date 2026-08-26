@@ -1,17 +1,18 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: minio-models-bucket-bootstrap
+  name: minio-kserve-model-reader-bootstrap
   namespace: model-storage
   labels:
     app.kubernetes.io/name: minio
-    app.kubernetes.io/component: bucket-bootstrap
+    app.kubernetes.io/component: kserve-model-reader
     app.kubernetes.io/part-of: ai-platform
   annotations:
     argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/sync-wave: "10"
+    argocd.argoproj.io/sync-wave: "20"
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-options: Force=true,Replace=true
+
 spec:
   backoffLimit: 3
   ttlSecondsAfterFinished: 600
@@ -20,7 +21,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: minio
-        app.kubernetes.io/component: bucket-bootstrap
+        app.kubernetes.io/component: kserve-model-reader
         app.kubernetes.io/part-of: ai-platform
 
     spec:
@@ -53,6 +54,18 @@ spec:
                   name: minio-root-credentials
                   key: root-password
 
+            - name: KSERVE_READER_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kserve-model-reader-credentials
+                  key: access-key
+
+            - name: KSERVE_READER_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kserve-model-reader-credentials
+                  key: secret-key
+
           command:
             - /bin/sh
             - -ec
@@ -61,14 +74,18 @@ spec:
             - |
               set -eu
 
-              echo "Configuring MinIO client alias..."
+              POLICY_NAME="kserve-model-reader-readonly"
+              POLICY_FILE="/policy/policy.json"
+              MINIO_ENDPOINT="http://minio.model-storage.svc.cluster.local:9000"
+
+              echo "Configuring MinIO administrative alias..."
 
               attempt=1
               max_attempts=60
 
               while ! mc alias set \
                 local \
-                http://minio.model-storage.svc.cluster.local:9000 \
+                "${MINIO_ENDPOINT}" \
                 "${MINIO_ROOT_USER}" \
                 "${MINIO_ROOT_PASSWORD}"
               do
@@ -82,24 +99,62 @@ spec:
                 sleep 5
               done
 
-              echo "PASS: MinIO connection and authentication succeeded"
+              echo "PASS: MinIO administrative authentication succeeded"
 
-              echo "Ensuring models bucket exists..."
+              echo "Verifying models bucket exists..."
 
-              mc mb \
-                --ignore-existing \
-                local/models
-
-              echo "Verifying models bucket..."
-
-              mc stat \
-                local/models
+              mc stat local/models
 
               echo "PASS: models bucket exists"
+
+              echo "Reconciling read-only KServe IAM policy..."
+
+              mc admin policy create \
+                local \
+                "${POLICY_NAME}" \
+                "${POLICY_FILE}"
+
+              echo "PASS: reader policy reconciled"
+
+              echo "Reconciling KServe model reader credentials..."
+
+              printf '%s\n%s\n' \
+                "${KSERVE_READER_ACCESS_KEY}" \
+                "${KSERVE_READER_SECRET_KEY}" \
+              | mc admin user add local
+
+              echo "PASS: reader identity reconciled"
+
+              echo "Attaching read-only policy..."
+
+              mc admin policy attach \
+                local \
+                "${POLICY_NAME}" \
+                --user "${KSERVE_READER_ACCESS_KEY}"
+
+              echo "PASS: reader policy attached"
+
+              echo "Verifying reader identity..."
+
+              mc admin user info \
+                local \
+                "${KSERVE_READER_ACCESS_KEY}"
+
+              echo "Verifying reader policy..."
+
+              mc admin policy info \
+                local \
+                "${POLICY_NAME}"
+
+              echo "PASS: KServe model reader bootstrap completed"
 
           volumeMounts:
             - name: mc-config
               mountPath: /work
+
+            - name: reader-policy
+              mountPath: /policy
+              readOnly: true
 
           resources:
             requests:
@@ -119,3 +174,7 @@ spec:
       volumes:
         - name: mc-config
           emptyDir: {}
+
+        - name: reader-policy
+          configMap:
+            name: kserve-model-reader-policy
