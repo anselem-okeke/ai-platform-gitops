@@ -7,3 +7,6 @@ resources:
   - service.yaml
   - deployment.yaml
   - bucket-bootstrap-job.yaml
+  - kserve-reader-external-secret.yaml
+  - kserve-reader-policy-configmap.yaml
+  - kserve-reader-bootstrap-job.yaml
