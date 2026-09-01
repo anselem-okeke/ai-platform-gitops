@@ -1,0 +1,39 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ClusterStorageContainer
+metadata:
+  name: default
+
+spec:
+  container:
+    name: storage-initializer
+    image: ghcr.io/anselem-okeke/ai-platform-storage-initializer@sha256:2761e8543f393697c93bd3e21eb0da76584324ad0e4711d3ca3b0bab0d6e3783
+    imagePullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      runAsNonRoot: true
+
+  supportedUriFormats:
+    - prefix: gs://
+    - prefix: s3://
+    - prefix: hdfs://
+    - prefix: hf://
+    - prefix: webhdfs://
+    - regex: https://(.+?).blob.core.windows.net/(.+)
+    - regex: https://(.+?).file.core.windows.net/(.+)
+    - regex: https?://(.+)/(.+)
+
+  supportsMultiModelDownload: true
+  workloadType: initContainer

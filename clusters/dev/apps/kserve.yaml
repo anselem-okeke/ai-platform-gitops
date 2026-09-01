@@ -20,6 +20,24 @@ spec:
 
       valuesObject:
         kserve:
+          # KServe v0.19.0 always appends :<tag> to
+          # kserve.storage.image, so a digest-pinned image cannot be
+          # expressed through that value.
+          #
+          # Disable the shared-resource default, explicitly retain
+          # the ConfigMap and cert-manager resources, and manage
+          # ClusterStorageContainer/default separately through GitOps.
+          createSharedResources: false
+
+          inferenceServiceConfig:
+            enabled: true
+
+          certManager:
+            enabled: true
+
+          storagecontainer:
+            enabled: false
+
           controller:
             deploymentMode: Standard
 
