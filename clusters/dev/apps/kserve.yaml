@@ -20,6 +20,9 @@ spec:
 
       valuesObject:
         kserve:
+          storagecontainer:
+            enabled: false
+
           controller:
             deploymentMode: Standard
 
