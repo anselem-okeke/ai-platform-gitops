@@ -3,3 +3,5 @@ kind: Kustomization
 
 resources:
   - fraud-model.yaml
+  - kserve-model-reader-external-secret.yaml
+  - kserve-model-reader-serviceaccount.yaml
