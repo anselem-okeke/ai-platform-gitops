@@ -5,3 +5,4 @@ resources:
   - fraud-model.yaml
   - kserve-model-reader-external-secret.yaml
   - kserve-model-reader-serviceaccount.yaml
+  - iris-v1-inferenceservice.yaml
