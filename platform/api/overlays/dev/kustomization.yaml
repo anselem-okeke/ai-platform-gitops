@@ -7,4 +7,4 @@ resources:
 images:
   - name: ai-platform-api
     newName: ghcr.io/anselem-okeke/ai-platform-api
-    digest: sha256:188136665f0af0e0f73fbe6998eeeb1f10e390e22e4800d1369977f5f77bef32
+    digest: sha256:25b53fbd05dd5c21148fb94e75039f31937816556caabfc34c5795defe25b137
