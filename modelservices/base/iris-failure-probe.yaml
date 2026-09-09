@@ -1,0 +1,30 @@
+apiVersion: platform.anselem.dev/v1alpha1
+kind: ModelService
+metadata:
+  name: iris-failure-probe
+  namespace: ai-platform
+  labels:
+    app.kubernetes.io/name: iris-failure-probe
+    app.kubernetes.io/component: model-serving
+    app.kubernetes.io/part-of: ai-platform
+
+spec:
+  backend: KServe
+  replicas: 1
+
+  predictor:
+    modelFormat:
+      name: sklearn
+      version: "1"
+
+    runtime: kserve-sklearnserver
+    storageUri: s3://models/sklearn/iris/missing-artifact
+    serviceAccountName: kserve-model-reader
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
