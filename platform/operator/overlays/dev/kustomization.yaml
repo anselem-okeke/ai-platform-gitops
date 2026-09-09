@@ -7,4 +7,4 @@ resources:
 images:
   - name: ai-platform-operator
     newName: ghcr.io/anselem-okeke/ai-platform-operator
-    digest: sha256:621bebe7e5dcf34bc55768777bfbde043a1abf8cc53e4fc8ec3dce4f914c2d41
+    digest: sha256:530ee0c9865325e11ae7e9a4f9ccb45670145ed47f20675d9780386134115c68
