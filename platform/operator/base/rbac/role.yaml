@@ -114,3 +114,21 @@ rules:
   - poddisruptionbudgets/status
   verbs:
   - get
+- apiGroups:
+  - serving.kserve.io
+  resources:
+  - inferenceservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - serving.kserve.io
+  resources:
+  - inferenceservices/status
+  verbs:
+  - get

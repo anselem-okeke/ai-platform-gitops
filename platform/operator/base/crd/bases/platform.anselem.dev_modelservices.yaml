@@ -23,6 +23,9 @@ spec:
     - jsonPath: .status.readyReplicas
       name: Ready
       type: integer
+    - jsonPath: .spec.backend
+      name: Backend
+      type: string
     - jsonPath: .spec.image
       name: Image
       type: string
@@ -57,6 +60,15 @@ spec:
           spec:
             description: spec defines the desired state of ModelService.
             properties:
+              backend:
+                default: Deployment
+                description: |-
+                  Backend selects the serving implementation.
+                  Existing ModelServices use the Deployment backend.
+                enum:
+                - Deployment
+                - KServe
+                type: string
               exposure:
                 description: |-
                   Exposure contains optional Gateway API HTTP exposure configuration.
@@ -155,7 +167,7 @@ spec:
                 type: object
               image:
                 description: |-
-                  Image is the container image used to run the model service.
+                  Image is the container image used by the Deployment backend.
                   Example: ghcr.io/anselem-okeke/fraud-model:v1
                 minLength: 1
                 type: string
@@ -210,6 +222,43 @@ spec:
                 maximum: 65535
                 minimum: 1
                 type: integer
+              predictor:
+                description: |-
+                  Predictor contains KServe model-serving configuration.
+                  It is required when backend is KServe.
+                properties:
+                  modelFormat:
+                    description: ModelServiceModelFormat identifies the serialized
+                      model format.
+                    properties:
+                      name:
+                        enum:
+                        - sklearn
+                        type: string
+                      version:
+                        default: "1"
+                        pattern: ^1$
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  runtime:
+                    default: kserve-sklearnserver
+                    enum:
+                    - kserve-sklearnserver
+                    type: string
+                  serviceAccountName:
+                    default: kserve-model-reader
+                    enum:
+                    - kserve-model-reader
+                    type: string
+                  storageUri:
+                    pattern: ^s3://[^/]+/.+
+                    type: string
+                required:
+                - modelFormat
+                - storageUri
+                type: object
               replicas:
                 default: 1
                 description: Replicas is the desired number of model-serving pods.
@@ -409,9 +458,16 @@ spec:
                     pattern: ^[0-9]+(Mi|Gi|Ti)$
                     type: string
                 type: object
-            required:
-            - image
             type: object
+            x-kubernetes-validations:
+            - message: spec.predictor is required for KServe and spec.image is required
+                for Deployment
+              rule: 'self.backend == ''KServe'' ? has(self.predictor) : size(self.image)
+                > 0'
+            - message: spec.predictor may only be configured for KServe
+              rule: self.backend == 'KServe' || !has(self.predictor)
+            - message: spec.backend is immutable
+              rule: '!has(oldSelf.backend) || self.backend == oldSelf.backend'
           status:
             description: status defines the observed state of ModelService.
             properties:
