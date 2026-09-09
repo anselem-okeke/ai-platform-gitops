@@ -5,7 +5,7 @@ metadata:
   namespace: ai-platform
 
 spec:
-  image: nginxinc/nginx-unprivileged:1.31-alpine
+  image: ghcr.io/anselem-okeke/ai-platform-fraud-model@sha256:2a72da80b3c4fbde312e70f231a62d62611931c66f89671a77ac4f8331060e09
   replicas: 2
   port: 8080
 
