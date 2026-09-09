@@ -6,4 +6,3 @@ resources:
   - kserve-model-reader-external-secret.yaml
   - kserve-model-reader-serviceaccount.yaml
   - iris-v1-modelservice.yaml
-  - iris-failure-probe.yaml
