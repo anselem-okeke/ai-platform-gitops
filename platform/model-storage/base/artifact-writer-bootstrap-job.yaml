@@ -1,0 +1,179 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-model-artifact-writer-bootstrap
+  namespace: model-storage
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/component: model-artifact-writer
+    app.kubernetes.io/part-of: ai-platform
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "30"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: minio
+        app.kubernetes.io/component: model-artifact-writer
+        app.kubernetes.io/part-of: ai-platform
+
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: mc
+
+          image: quay.io/minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: MC_CONFIG_DIR
+              value: /work/.mc
+
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-root-credentials
+                  key: root-user
+
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-root-credentials
+                  key: root-password
+
+            - name: ARTIFACT_WRITER_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: model-artifact-writer-credentials
+                  key: access-key
+
+            - name: ARTIFACT_WRITER_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: model-artifact-writer-credentials
+                  key: secret-key
+
+          command:
+            - /bin/sh
+            - -ec
+
+          args:
+            - |
+              set -eu
+
+              POLICY_NAME="model-artifact-writer-limited"
+              POLICY_FILE="/policy/policy.json"
+              MINIO_ENDPOINT="http://minio.model-storage.svc.cluster.local:9000"
+
+              echo "Configuring MinIO administrative alias..."
+
+              attempt=1
+              max_attempts=60
+
+              while ! mc alias set \
+                local \
+                "${MINIO_ENDPOINT}" \
+                "${MINIO_ROOT_USER}" \
+                "${MINIO_ROOT_PASSWORD}"
+              do
+                if [ "${attempt}" -ge "${max_attempts}" ]; then
+                  echo "ERROR: unable to connect/authenticate to MinIO after ${max_attempts} attempts"
+                  exit 1
+                fi
+
+                echo "MinIO connection/authentication failed; retrying (${attempt}/${max_attempts})..."
+                attempt=$((attempt + 1))
+                sleep 5
+              done
+
+              echo "PASS: MinIO administrative authentication succeeded"
+
+              echo "Verifying models bucket..."
+
+              mc stat local/models
+
+              echo "PASS: models bucket exists"
+
+              echo "Reconciling model artifact writer policy..."
+
+              mc admin policy create \
+                local \
+                "${POLICY_NAME}" \
+                "${POLICY_FILE}"
+
+              echo "PASS: writer policy reconciled"
+
+              echo "Reconciling model artifact writer identity..."
+
+              printf '%s\n%s\n' \
+                "${ARTIFACT_WRITER_ACCESS_KEY}" \
+                "${ARTIFACT_WRITER_SECRET_KEY}" \
+              | mc admin user add local
+
+              echo "PASS: writer identity reconciled"
+
+              echo "Attaching model artifact writer policy..."
+
+              mc admin policy attach \
+                local \
+                "${POLICY_NAME}" \
+                --user "${ARTIFACT_WRITER_ACCESS_KEY}"
+
+              echo "PASS: writer policy attached"
+
+              echo "Verifying writer identity..."
+
+              mc admin user info \
+                local \
+                "${ARTIFACT_WRITER_ACCESS_KEY}"
+
+              echo "Verifying writer policy..."
+
+              mc admin policy info \
+                local \
+                "${POLICY_NAME}"
+
+              echo "PASS: model artifact writer bootstrap completed"
+
+          volumeMounts:
+            - name: mc-config
+              mountPath: /work
+
+            - name: writer-policy
+              mountPath: /policy
+              readOnly: true
+
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+
+      volumes:
+        - name: mc-config
+          emptyDir: {}
+
+        - name: writer-policy
+          configMap:
+            name: model-artifact-writer-policy
