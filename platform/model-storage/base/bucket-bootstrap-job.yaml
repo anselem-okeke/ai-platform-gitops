@@ -41,6 +41,18 @@ spec:
             - name: MC_CONFIG_DIR
               value: /work/.mc
 
+            - name: MODEL_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: model-storage-bucket-configuration
+                  key: bucket-name
+
+            - name: MODEL_BUCKET_VERSIONING
+              valueFrom:
+                configMapKeyRef:
+                  name: model-storage-bucket-configuration
+                  key: versioning
+
             - name: MINIO_ROOT_USER
               valueFrom:
                 secretKeyRef:
@@ -84,18 +96,54 @@ spec:
 
               echo "PASS: MinIO connection and authentication succeeded"
 
-              echo "Ensuring models bucket exists..."
+              echo "Validating desired bucket configuration..."
+
+              case "${MODEL_BUCKET_VERSIONING}" in
+                enabled)
+                  ;;
+                *)
+                  echo "ERROR: unsupported bucket versioning state: ${MODEL_BUCKET_VERSIONING}"
+                  exit 1
+                  ;;
+              esac
+
+              BUCKET_ALIAS="local/${MODEL_BUCKET_NAME}"
+
+              echo "Ensuring ${MODEL_BUCKET_NAME} bucket exists..."
 
               mc mb \
                 --ignore-existing \
-                local/models
+                "${BUCKET_ALIAS}"
 
-              echo "Verifying models bucket..."
+              echo "Verifying ${MODEL_BUCKET_NAME} bucket..."
 
               mc stat \
-                local/models
+                "${BUCKET_ALIAS}"
 
-              echo "PASS: models bucket exists"
+              echo "PASS: ${MODEL_BUCKET_NAME} bucket exists"
+
+              echo "Enabling versioning on ${MODEL_BUCKET_NAME} bucket..."
+
+              mc version enable "${BUCKET_ALIAS}"
+
+              echo "Verifying ${MODEL_BUCKET_NAME} bucket versioning..."
+
+              VERSIONING_INFO="$(
+                mc version info "${BUCKET_ALIAS}"
+              )"
+
+              printf '%s\n' "${VERSIONING_INFO}"
+
+              case "${VERSIONING_INFO}" in
+                *"Enabled"*|*"enabled"*)
+                  ;;
+                *)
+                  echo "ERROR: bucket versioning is not enabled"
+                  exit 1
+                  ;;
+              esac
+
+              echo "PASS: ${MODEL_BUCKET_NAME} bucket versioning enabled"
 
           volumeMounts:
             - name: mc-config
