@@ -53,6 +53,11 @@ spec:
                   name: model-artifact-writer-credentials
                   key: secret-key
 
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+
           command:
             - /bin/sh
             - -ec
@@ -62,12 +67,12 @@ spec:
               set -eu
 
               MINIO_ENDPOINT="http://minio.model-storage.svc.cluster.local:9000"
-              PROBE_ID="$(date +%s)-$$"
+              PROBE_ID="${POD_UID}"
               PROBE_CONTENT="model-artifact-writer-policy-probe-${PROBE_ID}"
 
               STAGING_OBJECT="writer/models/staging/policy-probe/${PROBE_ID}/probe.txt"
               OUTSIDE_OBJECT="writer/models/unauthorized/${PROBE_ID}/probe.txt"
-              PUBLISHED_OBJECT="writer/models/sklearn/policy-probe/${PROBE_ID}/probe.txt"
+              PUBLISHED_OBJECT="writer/models/sklearn/.policy-validation/delete-denied-sentinel.txt"
 
               cleanup() {
                 if [ -n "${STAGING_OBJECT:-}" ]; then
@@ -134,15 +139,58 @@ spec:
 
               echo "PASS: upload outside approved prefixes denied"
 
+              echo "Ensuring the published deletion sentinel exists..."
+
+              printf '%s' \
+                "model-artifact-writer-delete-denied-sentinel" \
+                > /tmp/published-sentinel.txt
+
+              if ! mc stat "${PUBLISHED_OBJECT}" \
+                >/dev/null 2>&1
+              then
+                mc cp \
+                  /tmp/published-sentinel.txt \
+                  "${PUBLISHED_OBJECT}"
+              fi
+
+              echo "PASS: published deletion sentinel exists"
+
               echo "Testing denied deletion under published sklearn prefix..."
 
-              if mc rm "${PUBLISHED_OBJECT}"
+              if DELETE_OUTPUT="$(
+                mc rm "${PUBLISHED_OBJECT}" 2>&1
+              )"
               then
                 echo "ERROR: published-object deletion was allowed"
                 exit 1
               fi
 
-              echo "PASS: published-object deletion denied"
+              printf '%s\n' "${DELETE_OUTPUT}"
+
+              if ! printf '%s\n' "${DELETE_OUTPUT}" \
+                | grep -Eqi \
+                    'insufficient permissions|access denied|accessdenied'
+              then
+                echo "ERROR: deletion failed for an unexpected reason"
+                exit 1
+              fi
+
+              echo "PASS: published-object deletion denied by policy"
+
+              echo "Verifying the published sentinel still exists..."
+
+              PUBLISHED_CONTENT="$(
+                mc cat "${PUBLISHED_OBJECT}"
+              )"
+
+              if [ "${PUBLISHED_CONTENT}" != \
+                "model-artifact-writer-delete-denied-sentinel" ]
+              then
+                echo "ERROR: published sentinel content changed"
+                exit 1
+              fi
+
+              echo "PASS: published sentinel remains intact"
               echo "PASS: model artifact writer policy validation completed"
 
           volumeMounts:
