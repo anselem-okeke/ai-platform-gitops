@@ -167,13 +167,14 @@ spec:
 
               printf '%s\n' "${DELETE_OUTPUT}"
 
-              if ! printf '%s\n' "${DELETE_OUTPUT}" \
-                | grep -Eqi \
-                    'insufficient permissions|access denied|accessdenied'
-              then
-                echo "ERROR: deletion failed for an unexpected reason"
-                exit 1
-              fi
+              case "${DELETE_OUTPUT}" in
+                *"Insufficient permissions"*|*"insufficient permissions"*|*"Access Denied"*|*"access denied"*|*"AccessDenied"*|*"accessdenied"*)
+                  ;;
+                *)
+                  echo "ERROR: deletion failed for an unexpected reason"
+                  exit 1
+                  ;;
+              esac
 
               echo "PASS: published-object deletion denied by policy"
 
