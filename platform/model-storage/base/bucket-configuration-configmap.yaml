@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: model-storage-bucket-configuration
+  namespace: model-storage
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/component: bucket-configuration
+    app.kubernetes.io/part-of: ai-platform
+data:
+  bucket-name: models
+  versioning: enabled
