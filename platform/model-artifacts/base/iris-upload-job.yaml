@@ -1,0 +1,90 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: iris-v2-artifact-upload
+  namespace: ai-platform
+  labels:
+    app.kubernetes.io/part-of: ai-platform
+    app.kubernetes.io/component: model-artifact-onboarding
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: ai-platform
+        app.kubernetes.io/component: model-artifact-onboarding
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: upload
+          image: ghcr.io/anselem-okeke/ai-platform-iris-model-artifact@sha256:a240e8b9b4549d83b65b8ff9aef01a5508881cf144e50cfedf1cbbbac14380fd
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - /scripts/upload-iris.py
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: AWS_EC2_METADATA_DISABLED
+              value: "true"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: model-artifact-writer
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: model-artifact-writer
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: S3_ENDPOINT
+              value: http://minio.model-storage.svc.cluster.local:9000
+            - name: MODEL_BUCKET
+              value: models
+            - name: MODEL_PREFIX
+              value: sklearn/iris/v2/905af8760f4b4b6bdee0af322cdd83fc12ea1e0a
+            - name: EXPECTED_SOURCE_REVISION
+              value: 905af8760f4b4b6bdee0af322cdd83fc12ea1e0a
+            - name: EXPECTED_MODEL_SHA256
+              value: 1b05ac913f774bcdc6c63ff4318a0642576ac950be92a3dbb1b6232e5bb51e29
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: uploader
+              mountPath: /scripts
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: uploader
+          configMap:
+            name: iris-artifact-uploader
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
