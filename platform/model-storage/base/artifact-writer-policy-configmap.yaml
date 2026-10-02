@@ -4,7 +4,7 @@ metadata:
   name: model-artifact-writer-policy
   namespace: model-storage
   annotations:
-    platform.anselem.dev/policy-validation-version: "2"
+    platform.anselem.dev/policy-validation-version: "3"
   labels:
     app.kubernetes.io/name: minio
     app.kubernetes.io/component: model-artifact-writer
