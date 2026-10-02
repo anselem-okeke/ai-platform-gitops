@@ -13,3 +13,4 @@ resources:
   - artifact-writer-external-secret.yaml
   - artifact-writer-policy-configmap.yaml
   - artifact-writer-bootstrap-job.yaml
+  - artifact-writer-policy-validation-job.yaml

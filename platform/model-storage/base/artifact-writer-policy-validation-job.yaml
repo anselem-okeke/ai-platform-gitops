@@ -1,0 +1,169 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-model-artifact-writer-policy-validation
+  namespace: model-storage
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/component: model-artifact-writer-validation
+    app.kubernetes.io/part-of: ai-platform
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "40"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 600
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: minio
+        app.kubernetes.io/component: model-artifact-writer-validation
+        app.kubernetes.io/part-of: ai-platform
+
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: policy-validation
+
+          image: quay.io/minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: MC_CONFIG_DIR
+              value: /work/.mc
+
+            - name: ARTIFACT_WRITER_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: model-artifact-writer-credentials
+                  key: access-key
+
+            - name: ARTIFACT_WRITER_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: model-artifact-writer-credentials
+                  key: secret-key
+
+          command:
+            - /bin/sh
+            - -ec
+
+          args:
+            - |
+              set -eu
+
+              MINIO_ENDPOINT="http://minio.model-storage.svc.cluster.local:9000"
+              PROBE_ID="$(date +%s)-$$"
+              PROBE_CONTENT="model-artifact-writer-policy-probe-${PROBE_ID}"
+
+              STAGING_OBJECT="writer/models/staging/policy-probe/${PROBE_ID}/probe.txt"
+              OUTSIDE_OBJECT="writer/models/unauthorized/${PROBE_ID}/probe.txt"
+              PUBLISHED_OBJECT="writer/models/sklearn/policy-probe/${PROBE_ID}/probe.txt"
+
+              cleanup() {
+                if [ -n "${STAGING_OBJECT:-}" ]; then
+                  mc rm \
+                    --force \
+                    "${STAGING_OBJECT}" \
+                    >/dev/null 2>&1 \
+                  || true
+                fi
+              }
+
+              trap cleanup 0
+
+              echo "Configuring model artifact writer alias..."
+
+              mc alias set \
+                writer \
+                "${MINIO_ENDPOINT}" \
+                "${ARTIFACT_WRITER_ACCESS_KEY}" \
+                "${ARTIFACT_WRITER_SECRET_KEY}"
+
+              echo "PASS: writer authentication succeeded"
+
+              printf '%s' "${PROBE_CONTENT}" \
+                > /tmp/probe.txt
+
+              echo "Testing allowed staging upload..."
+
+              mc cp \
+                /tmp/probe.txt \
+                "${STAGING_OBJECT}"
+
+              echo "PASS: staging upload allowed"
+
+              echo "Testing allowed staging read..."
+
+              DOWNLOADED_CONTENT="$(
+                mc cat "${STAGING_OBJECT}"
+              )"
+
+              if [ "${DOWNLOADED_CONTENT}" != "${PROBE_CONTENT}" ]; then
+                echo "ERROR: downloaded staging content does not match"
+                exit 1
+              fi
+
+              echo "PASS: staging read and content verification succeeded"
+
+              echo "Testing allowed staging deletion..."
+
+              mc rm "${STAGING_OBJECT}"
+              STAGING_OBJECT=""
+
+              echo "PASS: staging deletion allowed"
+
+              echo "Testing denied upload outside approved prefixes..."
+
+              if mc cp \
+                /tmp/probe.txt \
+                "${OUTSIDE_OBJECT}"
+              then
+                echo "ERROR: upload outside approved prefixes was allowed"
+                exit 1
+              fi
+
+              echo "PASS: upload outside approved prefixes denied"
+
+              echo "Testing denied deletion under published sklearn prefix..."
+
+              if mc rm "${PUBLISHED_OBJECT}"
+              then
+                echo "ERROR: published-object deletion was allowed"
+                exit 1
+              fi
+
+              echo "PASS: published-object deletion denied"
+              echo "PASS: model artifact writer policy validation completed"
+
+          volumeMounts:
+            - name: mc-config
+              mountPath: /work
+
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+
+      volumes:
+        - name: mc-config
+          emptyDir: {}
