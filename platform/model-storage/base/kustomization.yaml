@@ -10,3 +10,6 @@ resources:
   - kserve-reader-external-secret.yaml
   - kserve-reader-policy-configmap.yaml
   - kserve-reader-bootstrap-job.yaml
+  - artifact-writer-external-secret.yaml
+  - artifact-writer-policy-configmap.yaml
+  - artifact-writer-bootstrap-job.yaml
