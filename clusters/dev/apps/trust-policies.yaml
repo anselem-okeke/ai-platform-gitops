@@ -23,6 +23,7 @@ spec:
             - "ghcr.io/anselem-okeke/ai-platform-sklearnserver**"
             - "ghcr.io/anselem-okeke/ai-platform-storage-initializer**"
             - "ghcr.io/anselem-okeke/ai-platform-fraud-model**"
+            - "ghcr.io/anselem-okeke/ai-platform-iris-model-artifact**"
 
   destination:
     server: https://kubernetes.default.svc
