@@ -4,6 +4,6 @@ resources:
   - writer-external-secret.yaml
   - iris-upload-job.yaml
 configMapGenerator:
-  - name: iris-artifact-uploader
+  - name: model-artifact-uploader
     files:
-      - upload-iris.py
+      - upload-model.py

@@ -34,12 +34,22 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - python
-            - /scripts/upload-iris.py
+            - /scripts/upload-model.py
           env:
             - name: PYTHONUNBUFFERED
               value: "1"
             - name: PYTHONDONTWRITEBYTECODE
               value: "1"
+            - name: MODEL_NAME
+              value: iris
+            - name: MODEL_VERSION
+              value: v2
+            - name: MODEL_VERIFIER_PATH
+              value: /opt/iris/verify.py
+            - name: EXPECTED_MANIFEST_SHA256
+              value: bc3998406aa9961865e5ea093c81181e296e32f00670f19258f1f6a559534418
+            - name: VALIDATE_ONLY
+              value: "false"
             - name: AWS_EC2_METADATA_DISABLED
               value: "true"
             - name: AWS_ACCESS_KEY_ID
@@ -84,7 +94,7 @@ spec:
       volumes:
         - name: uploader
           configMap:
-            name: iris-artifact-uploader
+            name: model-artifact-uploader
         - name: tmp
           emptyDir:
             sizeLimit: 64Mi
