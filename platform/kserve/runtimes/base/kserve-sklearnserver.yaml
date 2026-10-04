@@ -21,7 +21,7 @@ spec:
 
   containers:
     - name: kserve-container
-      image: ghcr.io/anselem-okeke/ai-platform-sklearnserver@sha256:2273cfb3aea6ee8d38175ff972ca9b6c036a57f4e517ff7b83b7bc02bbba8843
+      image: ghcr.io/anselem-okeke/ai-platform-sklearnserver@sha256:ab660518e3d48b606a9e25699aaf332b27642e1a456954f7959e59a27aa9bac2
 
       args:
         - --model_name={{.Name}}

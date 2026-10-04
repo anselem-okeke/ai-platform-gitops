@@ -24,6 +24,7 @@ spec:
             - "ghcr.io/anselem-okeke/ai-platform-storage-initializer**"
             - "ghcr.io/anselem-okeke/ai-platform-fraud-model**"
             - "ghcr.io/anselem-okeke/ai-platform-iris-model-artifact**"
+            - "ghcr.io/anselem-okeke/ai-platform-breast-cancer-model-artifact**"
 
   destination:
     server: https://kubernetes.default.svc
