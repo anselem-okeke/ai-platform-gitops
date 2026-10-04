@@ -6,7 +6,7 @@ metadata:
 spec:
   container:
     name: storage-initializer
-    image: ghcr.io/anselem-okeke/ai-platform-storage-initializer@sha256:a8e9259cbaf66ab791187f9d21361f041a6ebf8b1cb0d33dda69d6340a0c258e
+    image: ghcr.io/anselem-okeke/ai-platform-storage-initializer@sha256:e9dae5b326b0ff85f39ee8924cdec9ce4299cc8a6bea1cf815b83e511f1eb711
     imagePullPolicy: IfNotPresent
 
     resources:
