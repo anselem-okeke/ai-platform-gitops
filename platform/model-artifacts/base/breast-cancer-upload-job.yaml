@@ -1,0 +1,100 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: breast-cancer-v1-artifact-upload
+  namespace: ai-platform
+  labels:
+    app.kubernetes.io/part-of: ai-platform
+    app.kubernetes.io/component: model-artifact-onboarding
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: ai-platform
+        app.kubernetes.io/component: model-artifact-onboarding
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: upload
+          image: ghcr.io/anselem-okeke/ai-platform-breast-cancer-model-artifact@sha256:228073155b790c4684db152733fcd18159a4e5bd2e09e403b773be56e2686368
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - /scripts/upload-model.py
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: MODEL_NAME
+              value: breast-cancer
+            - name: MODEL_VERSION
+              value: v1
+            - name: MODEL_VERIFIER_PATH
+              value: /opt/breast-cancer/verify.py
+            - name: EXPECTED_MANIFEST_SHA256
+              value: 4ea764826353e0f2e81a8942fbe8cac68d3b5b0577dd0e2145ac8584d6d3f398
+            - name: VALIDATE_ONLY
+              value: "false"
+            - name: AWS_EC2_METADATA_DISABLED
+              value: "true"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: model-artifact-writer
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: model-artifact-writer
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: S3_ENDPOINT
+              value: http://minio.model-storage.svc.cluster.local:9000
+            - name: MODEL_BUCKET
+              value: models
+            - name: MODEL_PREFIX
+              value: sklearn/breast-cancer/v1/558e4b26c9fbbd1f3799df827762d62beefc6571
+            - name: EXPECTED_SOURCE_REVISION
+              value: 558e4b26c9fbbd1f3799df827762d62beefc6571
+            - name: EXPECTED_MODEL_SHA256
+              value: 8d4731ec7830a9b61232273ebbb739dac00c5a3ec5605a2f5f9c4f42674cd579
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: uploader
+              mountPath: /scripts
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: uploader
+          configMap:
+            name: model-artifact-uploader
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

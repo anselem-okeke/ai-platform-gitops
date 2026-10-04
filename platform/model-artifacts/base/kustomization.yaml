@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - writer-external-secret.yaml
   - iris-upload-job.yaml
+  - breast-cancer-upload-job.yaml
 configMapGenerator:
   - name: model-artifact-uploader
     files:
