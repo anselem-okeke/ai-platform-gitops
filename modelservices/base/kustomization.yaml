@@ -7,3 +7,4 @@ resources:
   - kserve-model-reader-serviceaccount.yaml
   - iris-v1-modelservice.yaml
   - iris-v2-modelservice.yaml
+  - breast-cancer-v1-modelservice.yaml
